@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>틀린그림 찾기</title>
+<style>
+  :root {
+    --bg: #f5f1e8; --card: #ffffff; --ink: #1f2430; --muted: #6b7280; --line: #e4dfd3;
+    --accent: #ff6b4a; --ok: #16a34a; --warn: #f59e0b; --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161920; --card: #232834; --ink: #eef0f4; --muted: #9aa3b2; --line: #343a48; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 20px 16px 40px; }
+  .screen { display: none; }
+  .screen.on { display: block; }
+
+  /* 시작 화면 */
+  h1 { font-size: clamp(30px, 5vw, 46px); margin: 12px 0 6px; letter-spacing: -.02em; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 22px; line-height: 1.6; }
+  h2 { font-size: 15px; color: var(--muted); font-weight: 700; margin: 24px 0 10px; }
+  h2 small { font-weight: 600; margin-left: 6px; color: var(--accent); }
+  .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 640px) { .levels { grid-template-columns: 1fr; } }
+  .lv { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 18px 18px 16px;
+    text-align: left; cursor: pointer; color: inherit; font: inherit; transition: transform .15s, border-color .15s; }
+  .lv:hover { transform: translateY(-2px); }
+  .lv.sel { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .lv .t { font-size: 22px; font-weight: 800; }
+  .lv .n { display: inline-block; margin-left: 6px; font-size: 13px; font-weight: 700; color: var(--accent); }
+  .lv .d { color: var(--muted); font-size: 14px; margin-top: 8px; line-height: 1.55; }
+  .lv .best { font-size: 13px; margin-top: 12px; font-weight: 700; }
+  .stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+  .st { aspect-ratio: 1; border-radius: 14px; border: 2px solid var(--line); background: var(--card); color: inherit;
+    font: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; padding: 4px; transition: transform .12s; }
+  .st:hover:not(:disabled) { transform: translateY(-2px); }
+  .st b { font-size: 20px; line-height: 1; }
+  .st .ic { font-size: 16px; }
+  .st small { font-size: 10px; letter-spacing: 1px; color: var(--warn); min-height: 12px; }
+  .st.sel { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+  .st.done { background: color-mix(in srgb, var(--ok) 10%, var(--card)); }
+  .st:disabled { opacity: .4; cursor: not-allowed; }
+  .seg { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+  .seg button { border: 0; background: none; color: inherit; font: inherit; font-size: 15px; padding: 8px 16px;
+    border-radius: 999px; cursor: pointer; }
+  .seg button.sel { background: var(--ink); color: var(--bg); font-weight: 700; }
+  .rules { margin: 24px 0; padding: 14px 18px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+  .rules b { color: var(--ink); }
+  .btn { border: 0; border-radius: 12px; padding: 12px 22px; font: inherit; font-size: 16px; font-weight: 700;
+    cursor: pointer; background: var(--accent); color: #fff; }
+  .btn.big { padding: 15px 40px; font-size: 18px; }
+  .btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+  .btn.hint { background: var(--warn); color: #3b2a00; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* 게임 화면 */
+  .hud { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .badge { background: var(--ink); color: var(--bg); font-weight: 800; font-size: 14px; padding: 5px 12px; border-radius: 99px; }
+  .theme { font-weight: 700; font-size: 14px; color: var(--muted); }
+  .count { font-weight: 800; font-size: 18px; }
+  .dots { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+  .dots i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ok); }
+  .dots i.on { background: var(--ok); }
+  .sp { flex: 1; }
+  .timer { font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 800; min-width: 70px; text-align: right; }
+  .timer.low { color: var(--bad); animation: blink .6s infinite alternate; }
+  @keyframes blink { to { opacity: .45; } }
+  .tbar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+  .tbar i { display: block; height: 100%; width: 100%; background: var(--ok); border-radius: 99px; }
+  .board { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) {
+    .board { grid-template-columns: 1fr; gap: 10px; }
+    .timer { font-size: 22px; }
+  }
+  .panel { position: relative; border-radius: 14px; overflow: hidden; border: 3px solid var(--card);
+    box-shadow: 0 4px 18px rgba(0,0,0,.10); background: #fff; }
+  .panel svg { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: manipulation;
+    shape-rendering: geometricPrecision; -webkit-user-select: none; user-select: none; }
+  .panel .lab { position: absolute; left: 8px; top: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px;
+    padding: 3px 9px; border-radius: 99px; pointer-events: none; }
+  .intro { position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column; align-items: center;
+    justify-content: center; background: rgba(15,18,25,.5); color: #fff; border-radius: 14px; text-align: center;
+    font-size: clamp(30px, 5vw, 46px); font-weight: 900; text-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  .intro.on { display: flex; animation: pop .25s ease-out; }
+  .intro small { font-size: .45em; font-weight: 700; margin-top: 8px; }
+  .shake { animation: shake .3s; }
+  @keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+  .float { position: absolute; transform: translate(-50%, -100%); color: var(--bad); font-weight: 900; font-size: 18px;
+    pointer-events: none; text-shadow: 0 1px 0 #fff, 0 0 6px #fff; animation: up .8s forwards; }
+  @keyframes up { to { transform: translate(-50%, -190%); opacity: 0; } }
+  .tip { text-align: center; color: var(--muted); font-size: 13px; margin-top: 12px; }
+
+  .ov { pointer-events: none; }
+  .mark { fill: none; stroke: #16a34a; stroke-width: 3.2; stroke-dasharray: 100; stroke-dashoffset: 100;
+    animation: draw .35s ease-out forwards; filter: drop-shadow(0 0 2px #fff); }
+  .mark.miss { stroke: #dc2626; stroke-dasharray: 5 4; stroke-dashoffset: 0; animation: blink .5s infinite alternate; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .hintmark { fill: rgba(245,158,11,.18); stroke: #f59e0b; stroke-width: 3; stroke-dasharray: 6 4;
+    animation: pulse .5s infinite alternate; }
+  @keyframes pulse { to { opacity: .35; } }
+  .xmark { stroke: #dc2626; stroke-width: 3.2; stroke-linecap: round; animation: fade .7s forwards; }
+  @keyframes fade { 60% { opacity: 1; } to { opacity: 0; } }
+
+  /* 결과 모달 */
+  .modal { position: fixed; inset: 0; background: rgba(15,18,25,.55); display: none; align-items: center;
+    justify-content: center; padding: 16px; z-index: 10; }
+  .modal.on { display: flex; }
+  .card { background: var(--card); border-radius: 20px; padding: 26px 24px 22px; width: 100%; max-width: 400px;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); animation: pop .25s ease-out; }
+  @keyframes pop { from { transform: scale(.9); opacity: 0; } }
+  .card h3 { margin: 0; font-size: 26px; }
+  .card .stg { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .stars { font-size: 36px; letter-spacing: 4px; margin: 10px 0 4px; }
+  .stars .off { opacity: .2; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 16px 0; }
+  .stats div { background: var(--bg); border-radius: 12px; padding: 10px 8px; }
+  .stats small { display: block; color: var(--muted); font-size: 12px; }
+  .stats b { font-size: 20px; }
+  .score { font-size: 15px; color: var(--muted); margin-bottom: 18px; }
+  .score b { font-size: 30px; color: var(--accent); display: block; }
+  .card .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 시작 화면 -->
+  <section id="start" class="screen on">
+    <h1>틀린그림 <span>찾기</span></h1>
+    <p class="sub">두 그림을 비교해서 서로 다른 곳을 찾아보세요. 총 15단계이고, 단계마다 배경이 바뀌며 매번 새 그림이 만들어집니다.</p>
+
+    <h2>난이도</h2>
+    <div class="levels" id="levels"></div>
+
+    <h2>단계 선택 <small id="progTxt"></small></h2>
+    <div class="stages" id="stages"></div>
+
+    <h2>제한 시간 (단계마다)</h2>
+    <div class="seg" id="times">
+      <button data-t="30">30초</button>
+      <button data-t="60" class="sel">1분 (추천)</button>
+      <button data-t="90">1분 30초</button>
+    </div>
+
+    <div class="rules">
+      <b>플레이 방법</b><br>
+      · 왼쪽·오른쪽 그림 중 아무 쪽이나 다른 곳을 클릭(터치)하면 초록 동그라미가 표시됩니다.<br>
+      · <b>💡 힌트는 단계마다 3번</b> 쓸 수 있어요. 아직 못 찾은 곳 하나가 잠깐 깜빡입니다. (단축키 H)<br>
+      · 엉뚱한 곳을 누르면 <b>3초가 줄어듭니다.</b> 단계를 깨면 다음 단계가 열리고, 6·11단계부터는 차이가 하나씩 늘어나요.
+    </div>
+
+    <button class="btn big" id="startBtn">1단계 시작</button>
+  </section>
+
+  <!-- 게임 화면 -->
+  <section id="game" class="screen">
+    <div class="hud">
+      <span class="badge" id="lvBadge">초급 · 1/15단계</span>
+      <span class="theme" id="themeTxt"></span>
+      <span class="count" id="count">0 / 5</span>
+      <span class="dots" id="dots"></span>
+      <span class="sp"></span>
+      <button class="btn hint" id="hintBtn">💡 힌트 3</button>
+      <button class="btn ghost" id="quitBtn">그만하기</button>
+      <span class="timer" id="timer">1:00</span>
+    </div>
+    <div class="tbar"><i id="tbar"></i></div>
+    <div class="board">
+      <div class="panel" id="pL"><span class="lab">A</span><svg id="svgL" viewBox="0 0 400 300"></svg></div>
+      <div class="panel" id="pR"><span class="lab">B</span><svg id="svgR" viewBox="0 0 400 300"></svg></div>
+      <div class="intro" id="intro"></div>
+    </div>
+    <p class="tip">두 그림 중 어느 쪽을 눌러도 됩니다.</p>
+  </section>
+</div>
+
+<!-- 결과 -->
+<div class="modal" id="modal">
+  <div class="card">
+    <h3 id="rTitle">성공!</h3>
+    <div class="stg" id="rStage"></div>
+    <div class="stars" id="rStars"></div>
+    <div class="stats">
+      <div><small>찾은 곳</small><b id="rFound">0/0</b></div>
+      <div><small>남은 시간</small><b id="rTime">0초</b></div>
+      <div><small>사용한 힌트</small><b id="rHint">0회</b></div>
+      <div><small>이 단계 최고</small><b id="rBest">0</b></div>
+    </div>
+    <div class="score">점수<b id="rScore">0</b></div>
+    <div class="acts" id="rActs"></div>
+  </div>
+</div>
+
+<!-- 공통 그라데이션 (음영·그림자·유리창 등) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="gS" cx=".36" cy=".3" r=".78">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".62" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".32"/>
+    </radialGradient>
+    <linearGradient id="gH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".24"/>
+    </linearGradient>
+    <linearGradient id="gV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".22"/>
+    </linearGradient>
+    <radialGradient id="gSh"><stop offset="0" stop-color="#000" stop-opacity=".3"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gGlow"><stop offset=".35" stop-color="#fff5b0" stop-opacity=".9"/><stop offset=".6" stop-color="#ffd84d" stop-opacity=".3"/><stop offset="1" stop-color="#ffd84d" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gMoonGlow"><stop offset=".4" stop-color="#fff9d6" stop-opacity=".55"/><stop offset="1" stop-color="#fff9d6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gCloud" gradientUnits="userSpaceOnUse" x1="0" y1="-22" x2="0" y2="12">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#f7fafd"/><stop offset="1" stop-color="#d7e3f1"/>
+    </linearGradient>
+    <radialGradient id="gWin" cx=".5" cy=".5" r=".7"><stop offset="0" stop-color="#fffbe0"/><stop offset="1" stop-color="#f6b928"/></radialGradient>
+    <linearGradient id="gGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cdeaff"/><stop offset="1" stop-color="#3f7fbf"/></linearGradient>
+    <radialGradient id="gVig" cx=".5" cy=".45" r=".75"><stop offset=".65" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".16"/></radialGradient>
+  </defs>
+</svg>
+
+<!-- 크기 측정용 (화면 밖) -->
+<svg id="measure" viewBox="0 0 400 300" width="400" height="300"
+     style="position:absolute;left:-9999px;top:0;visibility:hidden"></svg>
+
+<script>
+const $ = s => document.querySelector(s);
+const R = (a, b) => a + Math.random() * (b - a);
+const RI = (a, b) => Math.floor(R(a, b + 1));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const weighted = w => { let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0); for (const k in w) if ((r -= w[k]) < 0) return k; return Object.keys(w)[0]; };
+const hsl = (h, s, l) => `hsl(${((h % 360) + 360) % 360},${s}%,${l}%)`;
+const MAX_STAGE = 15;
+
+// 난이도 설정: 차이 개수(1단계 기준), 대상 최소 크기, 변화 종류(가중치), 변화 강도
+const LEVELS = {
+  easy:   { name: '초급', count: 5, minArea: 350, ops: { remove: 45, color: 35, add: 20 },
+            hue: [150, 180], desc: '큰 물체가 사라지거나 색이 확 바뀌어요.' },
+  medium: { name: '중급', count: 7, minArea: 180, ops: { remove: 30, color: 30, scale: 20, add: 20 },
+            hue: [90, 140], scale: [1.4, 0.65], desc: '크기 변화와 작은 물체가 추가돼요.' },
+  hard:   { name: '고급', count: 9, minArea: 0, ops: { remove: 22, color: 26, scale: 18, move: 20, add: 14 },
+            hue: [45, 70], scale: [1.28, 0.76], move: [9, 13], desc: '미세한 색·크기·위치 변화까지 숨어 있어요.' },
+};
+const stageCount = (L, st) => L.count + (st >= 6 ? 1 : 0) + (st >= 11 ? 1 : 0);
+
+/* ---------- 테마 (단계마다 순환) ---------- */
+const SKY_DAY0 = [['sun', 1], ['balloon', 1], ['balloon', .5], ['cloud', 1], ['cloud', .5]];
+const SKY_DAY1 = [['cloud', 1], ['cloud', .5], ['bird', 1], ['bird', 1], ['bird', .6]];
+const THEMES = {
+  spring: { name: '봄 마을', icon: '🌸', kind: 'land', sky: ['#6fb6ec', '#e3f4ff'], mtn: ['#8ea7c8', '#c3d3e6'], snowCaps: true,
+    hill1: ['#b6e3a8', '#94d089'], hill2: ['#a5dc97', '#86c679'], ground: ['#9edb82', '#6fb45a'], forest: '#6aa864', tuft: '#5e9e4b',
+    row0: SKY_DAY0, row1: SKY_DAY1, rowY: [44, 100], add0: ['balloon', 'cloud', 'bird'], add1: ['cloud', 'bird'],
+    house: true, trees: { tree: 7, pine: 3 }, treeHue: [90, 140], pineHue: [100, 150], apples: true, lit: .5,
+    fg: { flower: 7, mushroom: 2, rock: 2 }, fgAdd: ['flower', 'mushroom', 'rock'] },
+  beach: { name: '여름 해변', icon: '🏖️', kind: 'beach', sky: ['#4fb0ef', '#e6f7ff'], sea: ['#5cc0e6', '#1f78b4'], ground: ['#f7e6b8', '#e6c586'],
+    row0: [['sun', 1], ['cloud', 1], ['cloud', .6], ['bird', 1], ['bird', .5]], row1: [['boat', 1], ['boat', .6], ['bird', .4]],
+    rowY: [44, 172], add0: ['cloud', 'bird'], add1: ['boat', 'bird'],
+    house: false, trees: { palm: 6, umbrella: 4 },
+    fg: { shell: 4, starfish: 4, crab: 2, rock: 1 }, fgAdd: ['shell', 'starfish', 'crab'] },
+  autumn: { name: '가을 숲', icon: '🍂', kind: 'land', sky: ['#7fb8e0', '#fbe8c8'], mtn: ['#a99a8f', '#d6c8b8'], snowCaps: false,
+    hill1: ['#e3c27a', '#cfa55a'], hill2: ['#d9b465', '#c29448'], ground: ['#dcc27a', '#b8964a'], forest: '#c07a3e', tuft: '#9c7d33',
+    row0: SKY_DAY0, row1: SKY_DAY1, rowY: [44, 100], add0: ['balloon', 'cloud', 'bird'], add1: ['cloud', 'bird'],
+    house: true, trees: { tree: 7, pine: 3 }, treeHue: [15, 45], pineHue: [80, 120], apples: true, lit: .5,
+    fg: { pumpkin: 3, leaf: 4, mushroom: 2, rock: 2 }, fgAdd: ['pumpkin', 'leaf', 'mushroom'] },
+  night: { name: '별밤 마을', icon: '🌙', kind: 'land', sky: ['#0f1c46', '#3b4f8f'], mtn: ['#27345c', '#3d4d7a'], snowCaps: false,
+    hill1: ['#2f5a44', '#244a37'], hill2: ['#2a5240', '#1f4232'], ground: ['#2f6040', '#1f4630'], forest: '#1e3d2e', tuft: '#3f7a52',
+    stars: true, tint: .16,
+    row0: [['moon', 1], ['star', 1], ['star', 1], ['star', .6], ['cloud', .5]], row1: [['star', 1], ['star', .8], ['cloud', .7], ['star', .5]],
+    rowY: [44, 100], add0: ['star', 'cloud'], add1: ['star', 'cloud'],
+    house: true, trees: { tree: 6, pine: 4 }, treeHue: [100, 150], pineHue: [110, 160], apples: false, lit: .85,
+    fg: { flower: 5, mushroom: 3, rock: 2 }, fgAdd: ['flower', 'mushroom', 'rock'] },
+  winter: { name: '겨울 마을', icon: '⛄', kind: 'land', sky: ['#9fb9d6', '#eef4fa'], mtn: ['#b7c7da', '#e3ebf4'], snowCaps: true,
+    hill1: ['#f4f8fc', '#dfe8f2'], hill2: ['#eef3f9', '#d6e1ee'], ground: ['#fbfdff', '#dbe5f0'], forest: '#9fb3c6', tuft: null,
+    snow: true, sunH: 48,
+    row0: [['sun', 1], ['cloud', 1], ['cloud', .7], ['bird', .6]], row1: [['cloud', 1], ['bird', 1], ['bird', .7], ['cloud', .4]],
+    rowY: [44, 100], add0: ['cloud', 'bird'], add1: ['cloud', 'bird'],
+    house: true, trees: { pine: 6, snowman: 3 }, pineHue: [110, 160], lit: .7,
+    fg: { present: 4, snowman: 3, rock: 3 }, fgAdd: ['present', 'snowman', 'rock'] },
+  sea: { name: '바닷속', icon: '🐠', kind: 'sea', sky: ['#48b3e6', '#0f4f8c'], ground: ['#e8d39c', '#bfa36a'],
+    row0: [['fish', 1], ['fish', 1], ['jelly', 1], ['bubbles', 1], ['fish', .6]], row1: [['fish', 1], ['fish', .7], ['bubbles', .6], ['jelly', .5]],
+    rowY: [52, 118], add0: ['fish', 'bubbles', 'jelly'], add1: ['fish', 'bubbles'],
+    house: false, trees: { seaweed: 5, coral: 5 },
+    fg: { shell: 3, starfish: 3, crab: 2, rock: 2, chest: 1 }, fgAdd: ['shell', 'starfish', 'crab'] },
+};
+const THEME_ORDER = ['spring', 'beach', 'autumn', 'night', 'winter', 'sea'];
+const themeOf = st => THEME_ORDER[(st - 1) % THEME_ORDER.length];
+
+/* ---------- 그림 요소 ---------- */
+// 공통 음영(흰→투명→검정)을 색 위에 덧씌워서, 색이 바뀌어도 입체감은 그대로 유지
+const OL = 'stroke="rgba(40,30,20,.3)" stroke-width=".8" stroke-linejoin="round"';
+const shadow = (rx, ry = rx * .26, cx = 0) => `<ellipse cx="${cx}" cy="0" rx="${rx}" ry="${ry}" fill="url(#gSh)"/>`;
+const sphere = (cx, cy, r, fill) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" ${OL}/><circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gS)"/>`;
+const starPts = (ro, ri) => [...Array(10)].map((_, i) => { const r = i % 2 ? ri : ro, a = -Math.PI / 2 + i * Math.PI / 5; return `${(Math.cos(a) * r).toFixed(2)},${(Math.sin(a) * r).toFixed(2)}`; }).join(' ');
+const SHAPES = {
+  sun: o => {
+    let r = '';
+    for (let i = 0; i < 12; i++) r += `<polygon points="-2.8,-24 2.8,-24 0,${i % 2 ? -31 : -35}" transform="rotate(${i * 30})"/>`;
+    return `<circle r="36" fill="url(#gGlow)"/><g fill="${hsl(o.h, 95, 58)}">${r}</g>` +
+      `<circle r="20" fill="${hsl(o.h, 95, 60)}"/><circle r="20" fill="url(#gS)"/><circle r="16" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.2"/>`;
+  },
+  moon: o => `<circle r="30" fill="url(#gMoonGlow)"/><path d="M5,-17.3 A18,18 0 1,0 5,17.3 A20,20 0 0,1 5,-17.3Z" fill="${hsl(o.h, 85, 80)}" ${OL}/>` +
+    `<circle cx="-11" cy="-4" r="2.4" fill="#000" opacity=".08"/><circle cx="-8" cy="8" r="1.8" fill="#000" opacity=".08"/>`,
+  star: o => `<circle r="13" fill="url(#gGlow)" opacity=".7"/><polygon points="${starPts(9, 3.8)}" fill="${hsl(o.h, 95, 72)}" stroke="${hsl(o.h, 90, 50)}" stroke-width=".8" stroke-linejoin="round" transform="rotate(${o.v[0]})"/>`,
+  cloud: () => `<g fill="url(#gCloud)"><ellipse cx="-20" cy="2" rx="15" ry="10"/><ellipse cx="-6" cy="-8" rx="15" ry="14"/><ellipse cx="10" cy="-6" rx="13" ry="12"/><ellipse cx="22" cy="2" rx="13" ry="9"/><rect x="-22" y="-2" width="46" height="13" rx="6"/></g>` +
+    `<ellipse cx="-7" cy="-14" rx="8" ry="3.5" fill="#fff" opacity=".8"/>`,
+  bird: () => `<path d="M-12,-1 Q-6,-9 0,-1 Q6,-9 12,-1 Q6,-5 0,1.2 Q-6,-5 -12,-1Z" fill="#2f3441"/><ellipse cy=".3" rx="1.6" ry="1.2" fill="#2f3441"/>`,
+  balloon: o => {
+    const body = 'M0,-16 C9,-16 13,-8 13,-2 C13,7 5,13 0,15 C-5,13 -13,7 -13,-2 C-13,-8 -9,-16 0,-16Z';
+    return `<path d="M0,16 q-5,9 0,18 q5,8 0,14" fill="none" stroke="#6b7280" stroke-width="1"/>` +
+      `<path d="${body}" fill="${hsl(o.h, 80, 58)}" ${OL}/><path d="${body}" fill="url(#gS)"/>` +
+      `<path d="M-3,17.5 L3,17.5 L0,14Z" fill="${hsl(o.h, 80, 42)}"/><ellipse cx="-5" cy="-7" rx="2.4" ry="4.5" fill="#fff" opacity=".7" transform="rotate(22 -5 -7)"/>`;
+  },
+  boat: o => `<g transform="scale(${o.dir},1)"><path d="M-19,-5 L19,-5 L13,4 L-13,4Z" fill="${hsl(o.h, 60, 45)}" ${OL}/><path d="M-19,-5 L19,-5 L18,-2.5 L-18,-2.5Z" fill="#fff" opacity=".6"/>` +
+    `<path d="M0,-5 V-34" stroke="#5b4636" stroke-width="1.6"/><path d="M1.5,-33 L1.5,-8 L17,-8Z" fill="#fff" ${OL}/><path d="M1.5,-33 L1.5,-8 L17,-8Z" fill="url(#gH)"/>` +
+    `<path d="M-1.5,-30 L-1.5,-10 L-12,-10Z" fill="#f1f5f9" ${OL}/><path d="M0,-34 L7,-31.5 L0,-29Z" fill="${hsl(o.h + 150, 80, 55)}"/></g>` +
+    `<path d="M-16,6 q4,2 8,0 t8,0 t8,0 t8,0" fill="none" stroke="#fff" stroke-width="1" opacity=".7"/>`,
+  fish: o => `<g transform="scale(${o.dir},1)"><path d="M8,0 L18,-7 L16,0 L18,7Z" fill="${hsl(o.h, 85, 50)}" ${OL}/><ellipse rx="11" ry="7" fill="${hsl(o.h, 85, 58)}" ${OL}/>` +
+    `<path d="M-1,-6.5 Q1,0 -1,6.5" stroke="${hsl(o.h, 80, 40)}" stroke-width="1.6" fill="none"/><path d="M3.5,-6 Q5.5,0 3.5,6" stroke="${hsl(o.h, 80, 40)}" stroke-width="1.1" fill="none" opacity=".7"/>` +
+    `<ellipse rx="11" ry="7" fill="url(#gS)"/><path d="M-2,-6.5 Q2,-11 6,-6" fill="${hsl(o.h, 85, 48)}"/><circle cx="-6" cy="-1.5" r="2" fill="#fff"/><circle cx="-6.4" cy="-1.5" r="1.1" fill="#111"/></g>`,
+  jelly: o => {
+    const c = hsl(o.h, 70, 72), bell = 'M-12,1 Q-12,-15 0,-15 Q12,-15 12,1 Q6,-2 0,1 Q-6,-2 -12,1Z';
+    return `<g stroke="${c}" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".85"><path d="M-7,0 q-3,6 0,11 t0,10"/><path d="M-2,0 q3,6 0,12 t0,9"/><path d="M3,0 q-3,6 0,10 t0,11"/><path d="M8,0 q3,5 0,10 t0,8"/></g>` +
+      `<path d="${bell}" fill="${c}" opacity=".92" ${OL}/><path d="${bell}" fill="url(#gS)"/><ellipse cx="-4" cy="-9" rx="3" ry="2" fill="#fff" opacity=".6"/>`;
+  },
+  bubbles: () => [[0, 0, 5], [7, -9, 3.5], [-3, -16, 2.6], [4, -22, 2]].map(([x, y, r]) =>
+    `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-opacity=".85" stroke-width=".9"/><circle cx="${x - r * .35}" cy="${y - r * .35}" r="${r * .3}" fill="#fff" opacity=".85"/>`).join(''),
+  chimney: o => `<rect x="-6" y="-18" width="12" height="20" fill="${hsl(o.h, 45, 42)}" ${OL}/>` +
+    `<path d="M-6,-13H6M-6,-8H6M-6,-3H6M0,-18V-13M-3,-13V-8M3,-8V-3M0,-3V2" stroke="rgba(0,0,0,.22)" stroke-width=".7"/>` +
+    `<rect x="-6" y="-18" width="12" height="20" fill="url(#gH)"/><rect x="-7.5" y="-20.5" width="15" height="3.5" rx="1" fill="${o.snow ? '#fff' : hsl(o.h, 40, 32)}"/>` +
+    (o.smoke ? `<circle cx="1" cy="-25" r="3.2" fill="#eef1f5" opacity=".75"/><circle cx="4" cy="-31" r="4" fill="#eef1f5" opacity=".6"/>` : ''),
+  house: o => {
+    let siding = '', tiles = '';
+    for (let y = -42; y < -6; y += 6) siding += `M-32,${y}H32`;
+    for (const t of [.32, .56, .8]) { const y = -83 + 36 * t, w = 39 * t; tiles += `M${-w},${y}L${w},${y}`; }
+    return shadow(44, 4.5) +
+      `<rect x="-34" y="-6" width="68" height="6" fill="#9a8f84" ${OL}/>` +
+      `<rect x="-32" y="-48" width="64" height="42" fill="${hsl(o.h, 55, 78)}" ${OL}/>` +
+      `<path d="${siding}" stroke="rgba(0,0,0,.07)" stroke-width=".8"/>` +
+      `<rect x="-32" y="-48" width="64" height="42" fill="url(#gH)"/><rect x="-32" y="-48" width="64" height="5" fill="#000" opacity=".13"/>` +
+      `<polygon points="-39,-47 0,-83 39,-47" fill="${hsl(o.h2, 55, 45)}" ${OL}/>` +
+      `<path d="${tiles}" stroke="rgba(0,0,0,.16)" stroke-width=".9"/>` +
+      `<polygon points="-39,-47 0,-83 39,-47" fill="url(#gH)"/>` +
+      `<polyline points="-41,-46 0,-84.5 41,-46" fill="none" stroke="${hsl(o.h2, 45, 30)}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+      (o.snow ? `<path d="M-17,-68 L0,-85 L17,-68 Q11,-71 6,-67 Q0,-71 -6,-67 Q-11,-71 -17,-68Z" fill="#fff" ${OL}/>` : '') +
+      `<circle cy="-62" r="4" fill="#fff" opacity=".85" ${OL}/><circle cy="-62" r="2.6" fill="${hsl(o.h2, 40, 30)}" opacity=".5"/>`;
+  },
+  door: o => `<rect x="-8" y="-26" width="16" height="26" rx="2" fill="#f3efe6" ${OL}/>` +
+    `<rect x="-6.3" y="-24.3" width="12.6" height="24.3" rx="1.5" fill="${hsl(o.h, 50, 38)}"/>` +
+    `<rect x="-4.3" y="-21.5" width="8.6" height="8" rx="1" fill="none" stroke="rgba(0,0,0,.25)" stroke-width=".7"/><rect x="-4.3" y="-11" width="8.6" height="8" rx="1" fill="none" stroke="rgba(0,0,0,.25)" stroke-width=".7"/>` +
+    `<rect x="-6.3" y="-24.3" width="12.6" height="24.3" fill="url(#gV)"/><circle cx="3.6" cy="-12" r="1.3" fill="#fde68a" stroke="#b45309" stroke-width=".4"/>` +
+    `<rect x="-10" y="-1.8" width="20" height="2.8" rx="1" fill="#b8aea2" ${OL}/>`,
+  window: o => `<rect x="-8" y="-8" width="16" height="16" rx="1" fill="#fff" ${OL}/>` +
+    `<rect x="-6.5" y="-6.5" width="13" height="13" fill="${o.lit ? 'url(#gWin)' : 'url(#gGlass)'}"/>` +
+    `<polygon points="-6.5,-6.5 -.5,-6.5 -6.5,-.5" fill="#fff" opacity=".35"/>` +
+    `<path d="M0,-6.5V6.5M-6.5,0H6.5" stroke="#fff" stroke-width="1.5"/><rect x="-9.5" y="7.5" width="19" height="2.4" rx=".8" fill="#e7e1d6" ${OL}/>`,
+  tree: o => {
+    const v = o.v, c = hsl(o.h, 50, 40);
+    return shadow(22, 4.5) +
+      `<path d="M-4.5,0 L-3,-32 L3,-32 L4.5,0Z" fill="#8b5a2b" ${OL}/><path d="M-1,-18 L-8,-27" stroke="#8b5a2b" stroke-width="2.4" stroke-linecap="round"/>` +
+      `<path d="M-4.5,0 L-3,-32 L3,-32 L4.5,0Z" fill="url(#gH)"/>` +
+      sphere(-11 + v[0], -38, 12.5, c) + sphere(11 + v[1], -38, 12.5, c) + sphere(v[2], -53, 14, c) + sphere(0, -40, 15.5, c) +
+      `<g fill="${hsl(o.h, 55, 58)}" opacity=".55"><ellipse cx="-6" cy="-54" rx="4" ry="2.2" transform="rotate(-25 -6 -54)"/><ellipse cx="-14" cy="-42" rx="3" ry="1.8" transform="rotate(-35 -14 -42)"/><ellipse cx="6" cy="-46" rx="3" ry="1.8" transform="rotate(-20 6 -46)"/></g>`;
+  },
+  pine: o => {
+    let t = '';
+    [[20, -10, -40], [16, -26, -54], [11, -42, -66]].forEach(([w, b, top], i) => {
+      const pts = `${-w},${b} 0,${top} ${w},${b}`;
+      t += `<polygon points="${pts}" fill="${hsl(o.h, 45, 30 + i * 4)}" ${OL}/><polygon points="${pts}" fill="url(#gH)"/>`;
+      if (o.snow) { const k = .5, sy = top + (b - top) * k, sw = w * k; t += `<path d="M${-sw},${sy} L0,${top} L${sw},${sy} Q${sw / 2},${sy - 3} 0,${sy} Q${-sw / 2},${sy - 3} ${-sw},${sy}Z" fill="#fff"/>`; }
+    });
+    return shadow(20, 4.2) + `<rect x="-3" y="-12" width="6" height="12" fill="#7a4a24" ${OL}/>` + t;
+  },
+  palm: o => {
+    const c = hsl(o.h, 55, 36), trunk = 'M-4,0 Q-7,-36 1,-70 L5,-69 Q-1,-36 4,0Z';
+    let lv = '';
+    for (const a of [160, -160, -115, -65, -20, 20]) lv += `<g transform="translate(3,-70) rotate(${a})"><path d="M0,0 Q13,-8 26,2 Q13,-2 0,0Z" fill="${c}" ${OL}/><path d="M0,0 Q13,-5 26,2" fill="none" stroke="${hsl(o.h, 50, 26)}" stroke-width=".7"/></g>`;
+    return shadow(16, 3.5) + `<path d="${trunk}" fill="#b0844a" ${OL}/><path d="M0,0 Q-3,-36 3,-69" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="7" stroke-dasharray="1.2 5"/><path d="${trunk}" fill="url(#gH)"/>` +
+      lv + sphere(0, -67, 3, '#6b4423') + sphere(6, -66, 3, '#6b4423');
+  },
+  umbrella: o => {
+    const can = 'M-25,-36 Q0,-60 25,-36 Q18.75,-40 12.5,-36 Q6.25,-40 0,-36 Q-6.25,-40 -12.5,-36 Q-18.75,-40 -25,-36Z';
+    return shadow(24, 4) + `<path d="M1,0 L-.5,-47" stroke="#e5e7eb" stroke-width="2.2"/><path d="M1,0 L-.5,-47" stroke="rgba(0,0,0,.25)" stroke-width=".6"/>` +
+      `<path d="${can}" fill="${hsl(o.h, 80, 55)}" ${OL}/><g fill="#fff" opacity=".85"><polygon points="0,-48 -25,-36 -12.5,-36.5"/><polygon points="0,-48 0,-36 12.5,-36.5"/></g>` +
+      `<path d="${can}" fill="url(#gV)"/><circle cx="-.5" cy="-48" r="1.8" fill="${hsl(o.h, 70, 40)}"/>`;
+  },
+  seaweed: o => `<g fill="none" stroke-linecap="round"><path d="M-4,0 C-12,-15 4,-30 -4,-45 C-10,-55 0,-62 -2,-70" stroke="${hsl(o.h, 55, 33)}" stroke-width="5"/>` +
+    `<path d="M4,0 C12,-12 -2,-24 6,-38 C10,-45 4,-50 7,-56" stroke="${hsl(o.h, 55, 45)}" stroke-width="4.5"/><path d="M0,0 C-4,-8 4,-16 0,-26" stroke="${hsl(o.h, 55, 38)}" stroke-width="4"/>` +
+    `<path d="M-4,-2 C-11,-15 3,-30 -5,-45" stroke="#fff" stroke-opacity=".2" stroke-width="1.2"/></g>`,
+  coral: o => `<path d="M-11,0 Q0,-7 11,0Z" fill="${hsl(o.h, 45, 45)}"/><g fill="none" stroke="${hsl(o.h, 70, 58)}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M0,0 V-18 L-9,-28 V-38 M0,-18 L10,-30 V-42 M-9,-30 L-16,-36 M10,-34 L16,-40 M0,-10 L-6,-14"/></g>` +
+    `<g fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.3" stroke-linecap="round"><path d="M-1.5,-2 V-18 L-10,-28 V-37 M-1,-18 L9,-30"/></g>` +
+    `<g fill="${hsl(o.h, 75, 72)}">${[[-9, -38], [10, -42], [-16, -36], [16, -40]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.8"/>`).join('')}</g>`,
+  snowman: o => shadow(14, 3.2) + sphere(0, -13, 13, '#fbfdff') + sphere(0, -32, 10, '#fbfdff') + sphere(0, -47, 7.5, '#fbfdff') +
+    `<path d="M-9,-33 L-19,-40 M-15,-37 L-17,-42 M9,-33 L19,-39" stroke="#6b4423" stroke-width="1.3" fill="none" stroke-linecap="round"/>` +
+    `<path d="M-8.5,-40.5 Q0,-36.5 8.5,-40.5 L8.5,-37 Q0,-33 -8.5,-37Z" fill="${hsl(o.h, 75, 50)}"/><path d="M4.5,-38 L7.5,-28 L10.5,-29 L8,-38Z" fill="${hsl(o.h, 75, 44)}"/>` +
+    `<circle cx="-2.5" cy="-49" r="1" fill="#222"/><circle cx="2.5" cy="-49" r="1" fill="#222"/><path d="M0,-46.5 L7,-45.5 L0,-44.5Z" fill="#f97316"/>` +
+    `<circle cy="-33" r="1.1" fill="#333"/><circle cy="-28" r="1.1" fill="#333"/><circle cy="-16" r="1.2" fill="#333"/>` +
+    `<rect x="-7" y="-55.5" width="14" height="3" rx="1" fill="#222"/><rect x="-4.5" y="-64" width="9" height="9" rx="1" fill="#222"/><rect x="-4.5" y="-58.5" width="9" height="2" fill="${hsl(o.h, 75, 50)}"/>`,
+  present: o => shadow(11, 2.5) + `<rect x="-9" y="-16" width="18" height="16" rx="1" fill="${hsl(o.h, 70, 52)}" ${OL}/><rect x="-9" y="-16" width="18" height="16" fill="url(#gH)"/>` +
+    `<rect x="-10" y="-19" width="20" height="4" rx="1" fill="${hsl(o.h, 70, 44)}" ${OL}/><rect x="-1.8" y="-19" width="3.6" height="19" fill="${hsl(o.h2, 85, 62)}"/>` +
+    `<path d="M0,-19 C-7,-27 -10,-19 0,-19 C10,-19 7,-27 0,-19Z" fill="${hsl(o.h2, 85, 62)}" ${OL}/>`,
+  pumpkin: o => shadow(14, 3) + `<ellipse cx="-6" cy="-9" rx="7.5" ry="9" fill="${hsl(o.h, 85, 50)}" ${OL}/><ellipse cx="6" cy="-9" rx="7.5" ry="9" fill="${hsl(o.h, 85, 50)}" ${OL}/>` +
+    `<ellipse cy="-9" rx="7" ry="9.5" fill="${hsl(o.h, 85, 56)}" ${OL}/><ellipse cy="-9" rx="13.5" ry="9.5" fill="url(#gS)"/>` +
+    `<path d="M0,-18 q1,-4 3,-6" stroke="#4d7c2a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M1,-20 q5,-3 7,1" stroke="#65a30d" stroke-width="1" fill="none"/>`,
+  leaf: o => `<g transform="translate(0,-5) rotate(${o.v[0]})"><path d="M-10,0 Q-3,-8 10,0 Q-3,8 -10,0Z" fill="${hsl(o.h, 80, 50)}" ${OL}/><path d="M-10,0 L9,0 M-3,0 L1,-3 M-3,0 L1,3 M3,0 L6,-2 M3,0 L6,2" stroke="${hsl(o.h, 70, 32)}" stroke-width=".7" fill="none"/><path d="M-10,0 l-3,1" stroke="#6b4423" stroke-width="1"/></g>`,
+  shell: o => {
+    let r = '';
+    for (let i = -2; i <= 2; i++) r += `M0,-1 L${i * 4.6},-13`;
+    const p = 'M0,0 L-11,-9 Q-9,-17 0,-17 Q9,-17 11,-9Z';
+    return shadow(10, 2) + `<path d="${p}" fill="${hsl(o.h, 65, 80)}" ${OL}/><path d="${r}" stroke="${hsl(o.h, 50, 58)}" stroke-width=".9"/><path d="${p}" fill="url(#gS)"/><path d="M-3.5,0 L3.5,0 L0,-3Z" fill="${hsl(o.h, 50, 65)}"/>`;
+  },
+  starfish: o => {
+    const pts = starPts(12, 4.8);
+    let d = '';
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; d += `<circle cx="${(Math.cos(a) * 6.5).toFixed(1)}" cy="${(Math.sin(a) * 6.5).toFixed(1)}" r=".9"/>`; }
+    return shadow(11, 2.4) + `<g transform="translate(0,-6) scale(1,.72) rotate(${o.v[0]})"><polygon points="${pts}" fill="${hsl(o.h, 80, 60)}" ${OL}/><polygon points="${pts}" fill="url(#gS)"/><g fill="#fff" opacity=".7">${d}</g></g>`;
+  },
+  crab: o => {
+    const c = hsl(o.h, 80, 50), k = hsl(o.h, 70, 36);
+    return shadow(14, 2.6) + `<g stroke="${k}" stroke-width="1.4" fill="none" stroke-linecap="round"><path d="M-8,-5 L-14,-1 L-16,2 M-8,-7 L-15,-5 L-17,-2 M8,-5 L14,-1 L16,2 M8,-7 L15,-5 L17,-2"/><path d="M-6,-11 L-11,-16 M6,-11 L11,-16 M-3,-12 V-17 M3,-12 V-17"/></g>` +
+      `<ellipse cy="-8" rx="11" ry="6.5" fill="${c}" ${OL}/><ellipse cy="-8" rx="11" ry="6.5" fill="url(#gS)"/>` +
+      `<path d="M-11,-16 C-17,-18 -16,-24 -11,-23 L-12,-20 L-9,-19Z" fill="${c}" ${OL}/><path d="M11,-16 C17,-18 16,-24 11,-23 L12,-20 L9,-19Z" fill="${c}" ${OL}/>` +
+      `<circle cx="-3" cy="-18" r="1.8" fill="#fff"/><circle cx="3" cy="-18" r="1.8" fill="#fff"/><circle cx="-3" cy="-18" r="1" fill="#111"/><circle cx="3" cy="-18" r="1" fill="#111"/>`;
+  },
+  chest: o => shadow(16, 3) + `<rect x="-13" y="-13" width="26" height="13" fill="${hsl(o.h, 55, 33)}" ${OL}/><path d="M-13,-13 Q-13,-24 0,-24 Q13,-24 13,-13Z" fill="${hsl(o.h, 55, 40)}" ${OL}/>` +
+    `<path d="M-8,0 V-13 Q-8,-21 -6,-23 M8,0 V-13 Q8,-21 6,-23" stroke="#e8b923" stroke-width="2.2" fill="none"/><rect x="-13" y="-14.5" width="26" height="3" fill="#e8b923" ${OL}/>` +
+    `<rect x="-13" y="-24" width="26" height="24" fill="url(#gH)"/><rect x="-2.5" y="-15" width="5" height="6" rx="1" fill="#fcd34d" stroke="#92400e" stroke-width=".5"/>`,
+  flower: o => {
+    let p = '';
+    for (let i = 0; i < 6; i++) p += `<ellipse cy="-5.2" rx="3.2" ry="5" transform="translate(0,-21) rotate(${i * 60 + o.v[0]})"/>`;
+    return shadow(7, 1.8) +
+      `<path d="M0,0 Q-2,-9 0,-17" fill="none" stroke="#3f8f3a" stroke-width="1.8"/>` +
+      `<path d="M-.8,-6 q-7,-4 -9,-1 q5,4 9,1Z" fill="#4caf50" ${OL}/><path d="M-.3,-11 q6,-4 8,-1 q-4,4 -8,1Z" fill="#5cbf5c" ${OL}/>` +
+      `<g fill="${hsl(o.h, 80, 64)}" stroke="${hsl(o.h, 70, 42)}" stroke-width=".6">${p}</g>` +
+      `<circle cy="-21" r="3.2" fill="#fbbf24" stroke="#d97706" stroke-width=".5"/><circle cy="-21" r="3.2" fill="url(#gS)"/>`;
+  },
+  rock: o => shadow(16, 3.2) +
+    `<path d="M-15,0 L-13,-8 L-6,-13 L4,-14 L12,-9 L15,0Z" fill="#8b919c" ${OL}/>` +
+    `<path d="M-6,-13 L4,-14 L2,-7 L-8,-6Z" fill="#fff" opacity=".22"/><path d="M12,-9 L15,0 L4,0 L2,-7Z" fill="#000" opacity=".16"/>` +
+    `<path d="M-13,-8 L-8,-6 L-9,0" fill="none" stroke="rgba(0,0,0,.15)" stroke-width=".7"/>` +
+    (o.snow ? `<path d="M-13.5,-8 L-6,-13 L4,-14 L12,-9 Q7,-7 4,-10 Q-1,-8 -5,-10 Q-10,-7 -13.5,-8Z" fill="#fff"/>` : ''),
+  mushroom: o => {
+    const cap = 'M-14,-11 Q-14,-26 0,-26 Q14,-26 14,-11 Q0,-8 -14,-11Z';
+    return shadow(12, 2.6) +
+      `<path d="M-4,0 Q-5,-7 -3.5,-12 L3.5,-12 Q5,-7 4,0Z" fill="#f5ecd7" ${OL}/><path d="M-4,0 Q-5,-7 -3.5,-12 L3.5,-12 Q5,-7 4,0Z" fill="url(#gH)"/>` +
+      `<ellipse cy="-11" rx="12.5" ry="2.4" fill="#e6d8bb"/>` +
+      `<path d="${cap}" fill="${hsl(o.h, 75, 50)}" ${OL}/><path d="${cap}" fill="url(#gS)"/>` +
+      `<g fill="#fff"><ellipse cx="-6" cy="-18" rx="2.4" ry="1.9"/><ellipse cx="3" cy="-22" rx="2" ry="1.5"/><ellipse cx="8" cy="-15" rx="1.8" ry="1.4"/><ellipse cx="-1" cy="-15" rx="1.4" ry="1.1"/></g>`;
+  },
+};
+// 요소별로 허용되는 변화 (부속품이 붙은 요소는 색만 바꿈)
+const OPS = {
+  house: ['color'], door: ['color'], window: ['color', 'remove'], chimney: ['remove', 'scale'],
+  apple: ['remove', 'color'], cloud: ['remove', 'scale', 'move'], rock: ['remove', 'scale', 'move'],
+  bird: ['remove', 'scale', 'move'], bubbles: ['remove', 'scale', 'move'], chest: ['remove', 'color', 'scale'],
+};
+const opsFor = o => (o.type === 'tree' && o.hasApples) ? ['color'] : (OPS[o.type] || ['remove', 'color', 'scale', 'move']);
+SHAPES.apple = o => sphere(0, 0, 3.8, hsl(o.h, 80, 48)) +
+  `<path d="M0,-3.6 l.8,-2.2" stroke="#5b3a1a" stroke-width=".9"/><ellipse cx="2.4" cy="-5" rx="1.9" ry=".9" fill="#4d9a3a" transform="rotate(-25 2.4 -5)"/>`;
+
+let uid = 0;
+const G = 215;
+const mk = (type, x, y, props) => Object.assign({ id: 'o' + (uid++), type, x, y, s: 1 }, props);
+function newObj(type, x, y, T) {
+  const P = {
+    sun: () => ({ s: R(.9, 1.02), h: T.sunH || RI(40, 50) }),
+    moon: () => ({ s: R(.95, 1.1), h: RI(45, 55) }),
+    star: () => ({ s: R(.9, 1.3), h: RI(45, 60), v: [RI(0, 36)] }),
+    cloud: () => ({ s: R(.75, .9) }),
+    bird: () => ({ s: R(.9, 1.2) }),
+    balloon: () => ({ s: R(.9, 1.1), h: pick([0, 210, 280, 330, 45, 160]) }),
+    boat: () => ({ s: R(.85, 1.05), h: pick([0, 210, 30, 190]), dir: pick([1, -1]) }),
+    fish: () => ({ s: R(.85, 1.15), h: pick([10, 30, 50, 190, 280, 330]), dir: pick([1, -1]) }),
+    jelly: () => ({ s: R(.85, 1.1), h: pick([290, 320, 200, 180]) }),
+    bubbles: () => ({ s: R(.85, 1.15) }),
+    flower: () => ({ s: R(.85, 1.1), h: pick([0, 20, 280, 320, 200, 50, 340]), v: [RI(0, 30)] }),
+    mushroom: () => ({ s: R(.85, 1.1), h: pick([0, 15, 30, 350]) }),
+    rock: () => ({ s: R(.8, 1.15), snow: !!T.snow }),
+    pumpkin: () => ({ s: R(.85, 1.1), h: RI(22, 32) }),
+    leaf: () => ({ s: R(.95, 1.25), h: pick([5, 20, 35, 48]), v: [RI(-40, 40)] }),
+    present: () => ({ s: R(.85, 1.1), h: pick([0, 210, 130, 280, 45]), h2: pick([50, 0, 200]) }),
+    snowman: () => ({ s: R(.55, .7), h: pick([0, 210, 130, 280]) }),
+    shell: () => ({ s: R(.85, 1.1), h: pick([10, 30, 340, 40]) }),
+    starfish: () => ({ s: R(.8, 1.05), h: pick([15, 30, 0, 340]), v: [RI(0, 72)] }),
+    crab: () => ({ s: R(.8, 1), h: RI(0, 12) }),
+    chest: () => ({ s: R(.85, 1), h: RI(24, 32) }),
+    tree: () => ({ s: R(.9, 1.12), h: RI(...T.treeHue), v: [R(-2, 2), R(-2, 2), R(-3, 3)] }),
+    pine: () => ({ s: R(.9, 1.12), h: RI(...T.pineHue), snow: !!T.snow }),
+    palm: () => ({ s: R(.9, 1.06), h: RI(95, 130) }),
+    umbrella: () => ({ s: R(.9, 1.1), h: pick([0, 200, 45, 280, 330, 160]) }),
+    seaweed: () => ({ s: R(.85, 1.15), h: RI(95, 150) }),
+    coral: () => ({ s: R(.9, 1.15), h: pick([5, 20, 330, 290, 40, 350]) }),
+  };
+  return mk(type, x, y, P[type]());
+}
+const GROUND_W = { tree: [46, 56], pine: [42, 52], palm: [50, 58], umbrella: [50, 56], snowman: [32, 38], seaweed: [28, 36], coral: [36, 42] };
+const render = o => `<g data-id="${o.id}"><g transform="translate(${o.x.toFixed(1)},${o.y.toFixed(1)}) scale(${o.s.toFixed(3)})">${SHAPES[o.type](o)}</g></g>`;
+
+// 배경 (양쪽 그림 동일)
+function bg(sc, side) {
+  const T = THEMES[sc.theme], I = k => k + side;
+  const lg = (id, [a, b]) => `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+  let defs = lg(I('sky'), T.sky) + lg(I('gr'), T.ground);
+  if (T.hill1) defs += lg(I('h1'), T.hill1) + lg(I('h2'), T.hill2);
+  if (T.mtn) defs += lg(I('mt'), T.mtn);
+  if (T.sea) defs += lg(I('sea'), T.sea);
+  let s = `<defs>${defs}</defs><rect width="400" height="300" fill="url(#${I('sky')})"/>`;
+  if (T.stars) s += `<g fill="#fff">${sc.dots.map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"/>`).join('')}</g>`;
+  const mtn = dy => 'M0,210 ' + sc.peaks.map(p => `L${p[0]},${p[1] + dy}`).join(' ') + ' L400,210Z';
+
+  if (T.kind === 'land') {
+    s += `<path d="${mtn(0)}" fill="url(#${I('mt')})"/>`;
+    if (T.snowCaps) s += sc.peaks.filter(p => p[1] < 150).map(p =>
+      `<path d="M${p[0] - 9},${p[1] + 11} L${p[0]},${p[1]} L${p[0] + 9},${p[1] + 11} L${p[0] + 4},${p[1] + 8} L${p[0]},${p[1] + 12} L${p[0] - 4},${p[1] + 8}Z" fill="#fff" opacity=".9"/>`).join('');
+    s += `<ellipse cx="90" cy="222" rx="160" ry="46" fill="url(#${I('h1')})"/><ellipse cx="320" cy="226" rx="175" ry="50" fill="url(#${I('h2')})"/>` +
+      `<g fill="${T.forest}" opacity=".75">${sc.forest.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>` +
+      `<rect y="212" width="400" height="88" fill="url(#${I('gr')})"/>` +
+      `<path d="M0,300 L0,262 Q200,248 400,262 L400,300Z" fill="#000" opacity=".05"/>`;
+    if (T.tuft) s += `<path d="${sc.tufts.map(([x, y]) => `M${x - 3},${y} q-1,-5 -2.5,-7 M${x},${y} q0,-6 1,-9 M${x + 3},${y} q1,-4 3,-6`).join('')}" fill="none" stroke="${T.tuft}" stroke-width="1.1" stroke-linecap="round" opacity=".8"/>`;
+  } else if (T.kind === 'beach') {
+    s += `<rect y="150" width="400" height="70" fill="url(#${I('sea')})"/><rect y="149" width="400" height="2" fill="#fff" opacity=".5"/>` +
+      `<path d="${sc.waves.map(([x, y]) => `M${x},${y} q3,-2 6,0 t6,0`).join('')}" fill="none" stroke="#fff" stroke-width=".9" opacity=".55"/>` +
+      `<path d="M0,210 Q100,200 200,207 T400,204 V300 H0Z" fill="url(#${I('gr')})"/>` +
+      `<path d="M0,210 Q100,200 200,207 T400,204" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>` +
+      `<g fill="#b8955a" opacity=".45">${sc.tufts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".9"/>`).join('')}</g>`;
+  } else {
+    s += `<g fill="#fff" opacity=".07">${sc.rays.map(x => `<polygon points="${x},0 ${x + 34},0 ${x - 30},300 ${x - 80},300"/>`).join('')}</g>` +
+      `<path d="${mtn(38)}" fill="#1a5584" opacity=".55"/>` +
+      `<path d="M0,215 Q100,205 200,213 T400,209 V300 H0Z" fill="url(#${I('gr')})"/>` +
+      `<g fill="#9c8455" opacity=".4">${sc.tufts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1"/>`).join('')}</g>` +
+      `<g fill="none" stroke="#fff" stroke-opacity=".35" stroke-width=".7">${sc.dots.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r * 1.4}"/>`).join('')}</g>`;
+  }
+  if (T.snow) s += `<g fill="#fff">${sc.flakes.map(([x, y, r, o]) => `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"/>`).join('')}</g>`;
+  return s;
+}
+const topLayer = sc => {
+  const T = THEMES[sc.theme];
+  return (T.tint ? `<rect width="400" height="300" fill="#0a1440" opacity="${T.tint}" pointer-events="none"/>` : '') +
+    '<rect width="400" height="300" fill="url(#gVig)" pointer-events="none"/>';
+};
+
+/* ---------- 장면 생성 ---------- */
+function genScene(theme) {
+  const T = THEMES[theme];
+  uid = 0;
+  const sky = [], ground = [], fg = [], empty = [];
+  const roll = spec => spec.filter(([, p]) => Math.random() < p).map(([t]) => t);
+
+  // 하늘(또는 물속): 2줄 × 6칸
+  [0, 1].forEach(r => {
+    const cells = shuffle([...Array(6)].map((_, c) => ({ r, x: 33 + c * 66.8 + R(-6, 6), y: T.rowY[r] + R(-4, 4), zone: 'sky' })));
+    roll(r ? T.row1 : T.row0).slice(0, 5).forEach(t => { const c = cells.shift(); sky.push(newObj(t, c.x, c.y, T)); });
+    empty.push(...cells);
+  });
+
+  // 가운데 줄: 집 / 나무 / 야자수 / 해초 등
+  let x = RI(8, 26), houses = 0;
+  while (x < 372) {
+    const wantHouse = T.house && houses < 2 && (Math.random() < .4 || (houses === 0 && x > 180));
+    if (wantHouse && x + 80 <= 396) {
+      const hx = x + 40; houses++;
+      if (Math.random() < .65) ground.push(mk('chimney', hx + RI(15, 24), G - 58, { h: RI(0, 30), smoke: Math.random() < .6, snow: !!T.snow }));
+      ground.push(mk('house', hx, G, { h: pick([30, 45, 200, 350, 170, 260]), h2: pick([0, 15, 210, 120, 280]), snow: !!T.snow }));
+      ground.push(mk('door', hx, G, { h: pick([20, 200, 0, 140]) }));
+      ground.push(mk('window', hx - 18, G - 30, { lit: Math.random() < T.lit }));
+      ground.push(mk('window', hx + 18, G - 30, { lit: Math.random() < T.lit }));
+      x += 80 + RI(6, 18);
+    } else {
+      const t = weighted(T.trees), w = RI(...GROUND_W[t]);
+      if (x + w > 396) break;
+      const o = newObj(t, x + w / 2, G, T);
+      ground.push(o);
+      if (t === 'tree' && T.apples && Math.random() < .6) {
+        const pts = [];
+        for (let k = 0, n = RI(1, 3), g = 0; k < n && g < 30; g++) {
+          const a = R(0, Math.PI * 2), d = R(4, 12), p = { x: Math.cos(a) * d, y: Math.sin(a) * d };
+          if (pts.every(q => Math.hypot(q.x - p.x, q.y - p.y) > 9)) { pts.push(p); k++; }
+        }
+        pts.forEach(p => ground.push(mk('apple', o.x + p.x * o.s, G - 42 * o.s + p.y * o.s, { h: theme === 'autumn' ? pick([0, 45]) : 0 })));
+        o.hasApples = pts.length > 0;
+      }
+      x += w + RI(4, 14);
+    }
+  }
+
+  // 앞쪽: 2줄 × 8칸 중 11칸 채움
+  const cells = shuffle([...Array(16)].map((_, i) => ({ x: 25 + (i % 8) * 50, y: i < 8 ? 250 : 285 })));
+  cells.forEach((c, i) => {
+    const j = { x: c.x + R(-10, 10), y: c.y + R(-4, 4) };
+    if (i < 11) fg.push(newObj(weighted(T.fg), j.x, j.y, T));
+    else empty.push({ ...j, zone: 'fg' });
+  });
+
+  // 배경 장식
+  const peaks = [];
+  for (let px = -10; px < 420; px += RI(45, 75)) peaks.push([px, RI(135, 175)], [px + RI(20, 35), RI(178, 195)]);
+  const arr = (n, f) => [...Array(n)].map(f);
+  return {
+    theme, peaks, empty, objs: [...sky, ...ground, ...fg],
+    forest: arr(60, (_, i) => [i * 6.8 + R(-2, 2), R(200, 206), R(4, 7.5)]),
+    tufts: arr(46, () => [R(4, 396), R(220, 298)]),
+    dots: arr(40, () => [R(0, 400), R(0, 160), R(.6, 1.5).toFixed(2), R(.4, 1).toFixed(2)]),
+    flakes: arr(70, () => [R(0, 400), R(0, 300), R(.8, 1.9).toFixed(2), R(.5, .9).toFixed(2)]),
+    waves: arr(18, () => [R(0, 390), R(158, 200)]),
+    rays: arr(5, (_, i) => 30 + i * 85 + R(-15, 15)),
+  };
+}
+
+/* ---------- 차이 만들기 ---------- */
+const meas = $('#measure');
+function bboxOf(o) { meas.innerHTML = render(o); const b = meas.firstChild.getBBox(); return { x: b.x, y: b.y, w: b.width, h: b.height }; }
+const inter = (a, b, p = 0) => a.x - p < b.x + b.w && b.x - p < a.x + a.w && a.y - p < b.y + b.h && b.y - p < a.y + a.h;
+const overlap = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+const union = (a, b) => { const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y); return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y }; };
+const inBounds = r => r.x >= 2 && r.y >= 2 && r.x + r.w <= 398 && r.y + r.h <= 298;
+
+function makeMod(o, op, L) {
+  const m = { ...o }; delete m.bb;
+  if (op === 'remove') return { src: o, op, mod: null, rect: o.bb };
+  if (op === 'color') {
+    const sh = R(...L.hue) * (Math.random() < .5 ? -1 : 1);
+    if (o.type === 'window') m.lit = !o.lit;
+    else if (o.type === 'house') { if (Math.random() < .5) m.h = o.h + sh; else m.h2 = o.h2 + sh; }
+    else m.h = o.h + sh;
+    return { src: o, op, mod: m, rect: o.bb };
+  }
+  if (op === 'scale') m.s = o.s * (Math.random() < .5 ? L.scale[0] : L.scale[1]);
+  if (op === 'move') {
+    const d = R(...L.move);
+    if (o.y >= 200 || o.type === 'boat') m.x += d * (Math.random() < .5 ? -1 : 1);   // 땅·물 위 물체는 좌우로만
+    else { const a = R(0, Math.PI * 2); m.x += Math.cos(a) * d; m.y += Math.sin(a) * d; }
+  }
+  return { src: o, op, mod: m, rect: union(o.bb, bboxOf(m)) };
+}
+
+function makeAdd(scene, cells, minA, free) {
+  const T = THEMES[scene.theme];
+  while (cells.length) {
+    const c = cells.pop();
+    for (const t of shuffle([...(c.zone === 'fg' ? T.fgAdd : c.r === 0 ? T.add0 : T.add1)])) {
+      const n = newObj(t, c.x, c.y, T), bb = bboxOf(n);
+      if (bb.w * bb.h < minA || !inBounds(bb) || !free(bb) || scene.objs.some(o => inter(o.bb, bb, 3))) continue;
+      return { src: null, op: 'add', add: n, rect: bb };
+    }
+  }
+  return null;
+}
+
+// 뒤에 그려지는 물체에 많이 가려지는 변화는 제외 (찾을 수 없는 차이 방지)
+function hidden(scene, o, rect) {
+  const i = scene.objs.indexOf(o), area = rect.w * rect.h;
+  let cov = 0;
+  for (let j = i + 1; j < scene.objs.length; j++) cov += overlap(rect, scene.objs[j].bb);
+  return cov / area > .4;
+}
+
+function pickDiffs(scene, L, count) {
+  scene.objs.forEach(o => { o.bb = bboxOf(o); o.used = false; });
+  const diffs = [], cells = shuffle([...scene.empty]);
+  const free = r => !diffs.some(d => inter(d.rect, r, 10));
+  for (let pass = 0; pass < 2 && diffs.length < count; pass++) {
+    const minA = pass ? 0 : L.minArea;
+    for (let t = 0; t < 300 && diffs.length < count; t++) {
+      const op = weighted(L.ops);
+      let d = null;
+      if (op === 'add') d = makeAdd(scene, cells, minA, free);
+      else {
+        const o = shuffle(scene.objs.filter(o => !o.used && o.bb.w * o.bb.h >= minA && opsFor(o).includes(op) && free(o.bb)))[0];
+        if (o) d = makeMod(o, op, L);
+        if (d && !(free(d.rect) && inBounds(d.rect) && !hidden(scene, o, d.rect))) d = null;
+      }
+      if (d) { diffs.push(d); if (d.src) d.src.used = true; }
+    }
+  }
+  return diffs;
+}
+
+/* ---------- 진행 기록 ---------- */
+const progKey = lv => 'spotdiff-prog-' + lv;
+function getProg(lv) {
+  try { const p = JSON.parse(localStorage.getItem(progKey(lv))); if (p && p.stars) return p; } catch (e) {}
+  return { stars: {}, best: {} };
+}
+function saveProg(lv, p) { try { localStorage.setItem(progKey(lv), JSON.stringify(p)); } catch (e) {} }
+const unlockedOf = p => Math.min(MAX_STAGE, Object.keys(p.stars).reduce((m, k) => Math.max(m, +k), 0) + 1);
+const starSum = p => Object.values(p.stars).reduce((a, b) => a + b, 0);
+
+/* ---------- 게임 진행 ---------- */
+let level = 'easy', timeLimit = 60, stage = 1, state = null;
+const NS = 'http://www.w3.org/2000/svg';
+const svgs = () => [$('#svgL'), $('#svgR')];
+
+let actx;
+function beep(f, d = .12, type = 'sine', v = .08) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = f; g.gain.value = v;
+    g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + d);
+    o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + d);
+  } catch (e) {}
+}
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+
+function renderMenu() {
+  $('#levels').innerHTML = Object.entries(LEVELS).map(([k, L]) => {
+    const p = getProg(k), cleared = Object.keys(p.stars).length;
+    return `<button class="lv ${k === level ? 'sel' : ''}" data-lv="${k}">
+      <div class="t">${L.name}<span class="n">차이 ${L.count}~${L.count + 2}개</span></div>
+      <div class="d">${L.desc}</div>
+      <div class="best">🏁 ${cleared}/${MAX_STAGE}단계 · ⭐ ${starSum(p)}</div>
+    </button>`;
+  }).join('');
+  const p = getProg(level), un = unlockedOf(p);
+  if (stage > un) stage = un;
+  $('#progTxt').textContent = `${LEVELS[level].name} · ⭐ ${starSum(p)}/${MAX_STAGE * 3}`;
+  $('#stages').innerHTML = Array.from({ length: MAX_STAGE }, (_, i) => {
+    const n = i + 1, st = p.stars[n], lock = n > un, T = THEMES[themeOf(n)];
+    return `<button class="st ${n === stage ? 'sel' : ''} ${st ? 'done' : ''}" data-st="${n}" ${lock ? 'disabled' : ''} title="${T.name}">
+      <span class="ic">${lock ? '🔒' : T.icon}</span><b>${n}</b><small>${st ? '★'.repeat(st) : ''}</small></button>`;
+  }).join('');
+  $('#startBtn').textContent = `${stage}단계 시작`;
+}
+
+function startGame() {
+  const L = LEVELS[level], theme = themeOf(stage), T = THEMES[theme], want = stageCount(L, stage);
+  let scene, diffs, best = null;
+  for (let i = 0; i < 20; i++) {
+    scene = genScene(theme); diffs = pickDiffs(scene, L, want);
+    if (!best || diffs.length > best[1].length) best = [scene, diffs];
+    if (diffs.length === want) break;
+  }
+  [scene, diffs] = best;
+  const mods = new Map(diffs.filter(d => d.src).map(d => [d.src.id, d]));
+  const right = [];
+  scene.objs.forEach(o => { const d = mods.get(o.id); if (!d) right.push(o); else if (d.mod) right.push(d.mod); });
+  diffs.filter(d => d.add).forEach(d => right.push(d.add));
+  // 어느 쪽이 "원본"인지 매번 바꿔서 추가/삭제를 헷갈리게
+  const [a, b] = Math.random() < .5 ? [right, scene.objs] : [scene.objs, right];
+  $('#svgL').innerHTML = bg(scene, 'L') + a.map(render).join('') + topLayer(scene) + '<g class="ov"></g>';
+  $('#svgR').innerHTML = bg(scene, 'R') + b.map(render).join('') + topLayer(scene) + '<g class="ov"></g>';
+
+  const s = state = { L, level, stage, T, diffs, count: diffs.length, found: 0, hints: 3, limit: timeLimit, rem: timeLimit, running: false };
+  $('#lvBadge').textContent = `${L.name} · ${stage}/${MAX_STAGE}단계`;
+  $('#themeTxt').textContent = `${T.icon} ${T.name}`;
+  $('#modal').classList.remove('on');
+  $('#quitBtn').textContent = '그만하기';
+  show('game'); updateHUD(); drawTimer(timeLimit);
+
+  // 단계 안내 후 타이머 시작
+  const intro = $('#intro');
+  intro.innerHTML = `${stage}단계<small>${T.icon} ${T.name} · 차이 ${s.count}개</small>`;
+  intro.classList.add('on');
+  setTimeout(() => {
+    if (state !== s) return;
+    intro.classList.remove('on');
+    s.running = true; s.end = performance.now() + s.limit * 1000; updateHUD();
+    (function loop() {
+      if (state !== s || !s.running) return;
+      s.rem = Math.max(0, (s.end - performance.now()) / 1000);
+      drawTimer(s.rem);
+      if (s.rem <= 0) return finish(false);
+      requestAnimationFrame(loop);
+    })();
+  }, 1300);
+}
+
+function drawTimer(rem) {
+  const c = Math.ceil(rem), ratio = rem / state.limit;
+  $('#timer').textContent = `${Math.floor(c / 60)}:${String(c % 60).padStart(2, '0')}`;
+  $('#timer').classList.toggle('low', rem < 10 && state.running);
+  const bar = $('#tbar');
+  bar.style.width = (ratio * 100) + '%';
+  bar.style.background = ratio > .5 ? 'var(--ok)' : ratio > .2 ? 'var(--warn)' : 'var(--bad)';
+}
+
+function updateHUD() {
+  const n = state.count;
+  $('#count').textContent = `${state.found} / ${n}`;
+  $('#dots').innerHTML = Array.from({ length: n }, (_, i) => `<i class="${i < state.found ? 'on' : ''}"></i>`).join('');
+  $('#hintBtn').textContent = `💡 힌트 ${state.hints}`;
+  $('#hintBtn').disabled = !state.hints || !state.running;
+}
+
+function circleFor(d, cls) {
+  const r = d.rect, c = document.createElementNS(NS, 'circle');
+  c.setAttribute('cx', r.x + r.w / 2); c.setAttribute('cy', r.y + r.h / 2);
+  c.setAttribute('r', Math.max(14, Math.max(r.w, r.h) / 2 + 7));
+  c.setAttribute('pathLength', 100); c.setAttribute('class', cls);
+  return c;
+}
+function mark(d, cls) { return svgs().map(s => { const c = circleFor(d, cls); s.querySelector('.ov').appendChild(c); return c; }); }
+
+function toSvg(svg, e) {
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+function hit(r, p) {
+  const hw = Math.max(r.w / 2 + 5, 12), hh = Math.max(r.h / 2 + 5, 12);
+  return Math.abs(p.x - (r.x + r.w / 2)) <= hw && Math.abs(p.y - (r.y + r.h / 2)) <= hh;
+}
+
+function onClick(e) {
+  if (!state || !state.running) return;
+  const svg = e.currentTarget, p = toSvg(svg, e);
+  const d = state.diffs.find(d => !d.found && hit(d.rect, p));
+  if (d) {
+    d.found = true; state.found++;
+    (d.hintEls || []).forEach(el => el.remove());
+    mark(d, 'mark');
+    beep(880); setTimeout(() => beep(1320), 80);
+    updateHUD();
+    if (state.found === state.count) finish(true);
+  } else wrong(svg, p);
+}
+
+function wrong(svg, p) {
+  state.end -= 3000;
+  beep(170, .18, 'square', .05);
+  const x = document.createElementNS(NS, 'path');
+  x.setAttribute('d', `M${p.x - 7},${p.y - 7}L${p.x + 7},${p.y + 7}M${p.x + 7},${p.y - 7}L${p.x - 7},${p.y + 7}`);
+  x.setAttribute('class', 'xmark');
+  svg.querySelector('.ov').appendChild(x);
+  setTimeout(() => x.remove(), 700);
+  const panel = svg.parentElement, f = document.createElement('div');
+  f.className = 'float'; f.textContent = '-3초';
+  f.style.left = (p.x / 400 * 100) + '%'; f.style.top = (p.y / 300 * 100) + '%';
+  panel.appendChild(f); setTimeout(() => f.remove(), 800);
+  panel.classList.remove('shake'); void panel.offsetWidth; panel.classList.add('shake');
+}
+
+function useHint() {
+  if (!state || !state.running || !state.hints) return;
+  const left = state.diffs.filter(d => !d.found && !d.hintEls);
+  const d = pick(left.length ? left : state.diffs.filter(d => !d.found));
+  if (!d) return;
+  state.hints--;
+  (d.hintEls || []).forEach(el => el.remove());
+  d.hintEls = mark(d, 'hintmark');
+  const els = d.hintEls;
+  setTimeout(() => els.forEach(el => el.remove()), 2200);
+  beep(660, .2, 'triangle');
+  updateHUD();
+}
+
+function finish(win) {
+  const s = state; s.running = false;
+  const rem = win ? Math.ceil(s.rem) : 0;
+  drawTimer(s.rem); updateHUD();
+  s.diffs.filter(d => !d.found).forEach(d => mark(d, 'mark miss'));
+  $('#quitBtn').textContent = '결과 보기';
+  const used = 3 - s.hints;
+  const score = s.found * 100 + (win ? rem * 10 + s.hints * 50 : 0);
+  const stars = win ? (used === 0 ? 3 : 2) : (s.found >= s.count / 2 ? 1 : 0);
+  const p = getProg(s.level);
+  if (win) p.stars[s.stage] = Math.max(p.stars[s.stage] || 0, stars);
+  p.best[s.stage] = Math.max(p.best[s.stage] || 0, score);
+  saveProg(s.level, p);
+
+  const last = s.stage === MAX_STAGE;
+  $('#rTitle').textContent = win ? (last ? '🏆 15단계 모두 클리어!' : '🎉 단계 클리어!') : (s.rem <= 0 ? '⏰ 시간 종료' : '그만하기');
+  $('#rStage').textContent = `${s.L.name} ${s.stage}단계 · ${s.T.icon} ${s.T.name}` + (win && last ? ` · 총 ⭐ ${starSum(p)}/${MAX_STAGE * 3}` : '');
+  $('#rStars').innerHTML = [0, 1, 2].map(i => `<span class="${i < stars ? '' : 'off'}">⭐</span>`).join('');
+  $('#rFound').textContent = `${s.found}/${s.count}`;
+  $('#rTime').textContent = `${rem}초`;
+  $('#rHint').textContent = `${used}회`;
+  $('#rBest').textContent = p.best[s.stage];
+  $('#rScore').textContent = score;
+  const acts = win
+    ? (last ? [['first', '1단계부터 다시', ''], ['menu', '단계 선택', 'ghost'], ['view', '그림 보기', 'ghost']]
+            : [['next', `다음 단계 ▶ ${s.stage + 1}`, ''], ['again', '다시 하기', 'ghost'], ['menu', '단계 선택', 'ghost']])
+    : [['again', '다시 도전 (새 그림)', ''], ['menu', '단계 선택', 'ghost'], ['view', '그림 보기', 'ghost']];
+  $('#rActs').innerHTML = acts.map(([a, t, c]) => `<button class="btn ${c}" data-act="${a}">${t}</button>`).join('');
+
+  if (win) { beep(660); setTimeout(() => beep(880), 120); setTimeout(() => beep(1175, .25), 240); }
+  else beep(220, .4, 'sawtooth', .04);
+  setTimeout(() => { if (state === s) $('#modal').classList.add('on'); }, win ? 700 : 1500);
+}
+
+/* ---------- 이벤트 ---------- */
+$('#levels').addEventListener('click', e => {
+  const b = e.target.closest('.lv'); if (!b) return;
+  level = b.dataset.lv; stage = unlockedOf(getProg(level)); renderMenu();
+});
+$('#stages').addEventListener('click', e => {
+  const b = e.target.closest('.st'); if (!b || b.disabled) return;
+  stage = +b.dataset.st; renderMenu();
+});
+$('#stages').addEventListener('dblclick', e => { const b = e.target.closest('.st'); if (b && !b.disabled) startGame(); });
+$('#times').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  timeLimit = +b.dataset.t;
+  $('#times').querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b));
+});
+$('#startBtn').onclick = startGame;
+svgs().forEach(s => s.addEventListener('click', onClick));
+$('#hintBtn').onclick = useHint;
+$('#quitBtn').onclick = () => { if (state && state.running) finish(false); else if (state && !state.running && $('#intro').classList.contains('on')) return; else $('#modal').classList.add('on'); };
+$('#rActs').addEventListener('click', e => {
+  const a = e.target.closest('button')?.dataset.act;
+  if (a === 'next') { stage = Math.min(MAX_STAGE, state.stage + 1); startGame(); }
+  else if (a === 'again') startGame();
+  else if (a === 'first') { stage = 1; startGame(); }
+  else if (a === 'menu') { $('#modal').classList.remove('on'); state = null; renderMenu(); show('start'); }
+  else if (a === 'view') $('#modal').classList.remove('on');
+});
+document.addEventListener('keydown', e => { if ((e.key === 'h' || e.key === 'H' || e.key === 'ㅗ') && state && state.running) useHint(); });
+
+stage = unlockedOf(getProg(level));
+renderMenu();
+</script>
+</body>
+</html>
