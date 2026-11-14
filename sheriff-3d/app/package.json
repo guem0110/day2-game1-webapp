@@ -2,7 +2,7 @@
   "name": "sheriff-3d-app",
   "version": "1.0.0",
   "private": true,
-  "description": "보안관 3D 대결 - 안드로이드 앱 (Capacitor)",
+  "description": "황야의 배지 - 안드로이드 앱 (Capacitor)",
   "scripts": {
     "build": "node scripts/build-web.mjs",
     "sync": "npm run build && npx cap sync android",

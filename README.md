@@ -18,7 +18,9 @@
 
 ---
 
-# 🤠 보안관 3D 대결 (`sheriff-3d/`)
+# 🤠 황야의 배지 - 마을을 지켜라, 보안관! (`sheriff-3d/`)
+
+> 예전 이름: 보안관 3D 대결 · English: Badge of the Frontier - Hold the Town, Sheriff!
 
 3인칭 3D 서부 슈팅 게임입니다. `sheriff-3d/index.html`을 브라우저로 열면 바로 플레이할 수 있습니다 (Three.js를 CDN에서 불러오므로 인터넷 연결 필요).
 

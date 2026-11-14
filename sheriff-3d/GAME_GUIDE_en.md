@@ -1,4 +1,7 @@
-# 🤠 Sheriff 3D Showdown: Complete Game Guide (version 1.8)
+# 🤠 Badge of the Frontier - Hold the Town, Sheriff!
+## Complete Game Guide (version 1.8)
+
+> Formerly "Sheriff 3D Showdown"
 
 > A third-person 3D Western shooter: defend the town from outlaw gangs and take down their bosses.
 > The whole game is one HTML file (`index.html`) built on Three.js r128. Music and sound effects are synthesized in the browser, with no audio files.

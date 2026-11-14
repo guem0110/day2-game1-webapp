@@ -4,7 +4,7 @@ Play Console → Grow → Store presence → Main store listing → **Manage tra
 
 ## App name (max 30)
 ```
-Sheriff 3D Showdown
+Badge of the Frontier
 ```
 
 ## Short description (max 80)
@@ -16,7 +16,7 @@ Wild West 3D shooter: 12 bosses, card runs, mount races, 4-player co-op. No ads
 ```
 🤠 Outlaws are raiding the town — and you're the only sheriff in sight!
 
-Sheriff 3D Showdown is a blocky Wild West 3D shooter. Hold off wave after wave of bandits and face a giant boss every 5 waves.
+Badge of the Frontier is a blocky Wild West 3D shooter. Hold off wave after wave of bandits and face a giant boss every 5 waves.
 
 ■ 12 giant bosses
 Rattlesnake, Mad Miner, Train-robber boss, Raging Bull, Ghost Gunslinger, Outlaw Blackjack, a dive-bombing Giant Eagle, a spike-shooting Cactus Golem, the Twin Outlaws, a Volcano Giant, a Swamp Croc and a traitor Cavalry Captain. In co-op a Giant Outlaw appears whose two weak points must be hit together.

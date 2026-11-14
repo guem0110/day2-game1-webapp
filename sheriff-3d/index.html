@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>보안관 3D 대결</title>
+<title>황야의 배지 - 마을을 지켜라, 보안관!</title>
 <style>
   :root{--bg:#1a120b;--fg:#fff4dc;--accent:#ffd54f;--danger:#e53935;--ok:#66bb6a;--boss:#ff5252;--card:rgba(30,18,8,.86)}
   @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#120c07;--fg:#fff4dc;--card:rgba(20,12,5,.9)}}
@@ -270,10 +270,11 @@
   .talk{display:flex;gap:12px;align-items:flex-start;text-align:left;max-width:460px;margin:0 auto 10px} .talk .ic{font-size:54px} .talk p{margin:4px 0;font-size:18px}
   @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
   body.celebmode #cross,body.celebmode #minimap,body.celebmode #topr,body.celebmode #topl,body.celebmode #tbtns,body.celebmode #ttop,body.celebmode #toast,body.celebmode #bosswrap,body.celebmode #weap,body.celebmode #armor,body.celebmode #dodge,body.celebmode #hpbox,body.celebmode #joy,body.celebmode #relics,body.celebmode #autohud,body.celebmode #mphud,body.celebmode #pop{visibility:hidden!important}
+  h1 small.subt{display:block;font-size:.5em;letter-spacing:1px;color:#ffcc80;margin-top:2px;font-weight:700}
 </style>
 </head>
 <body>
-<div id="splash"><div class="st">⭐</div>보안관 3D 대결<small>마을로 가는 중…</small></div>
+<div id="splash"><div class="st">⭐</div>황야의 배지<small style="display:block;font-size:.55em;opacity:.85">마을을 지켜라, 보안관!</small><small>마을로 가는 중…</small></div>
 <div id="hud">
   <div id="topl"><div>점수 <span id="score">0</span></div><div>웨이브 <span id="wave">0</span></div><div id="diffhud"></div><div id="ghosthud" style="font-size:14px"></div><div id="autohud" style="font-size:14px;color:#80d8ff;display:inline-block;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.3)"></div><div id="mphud"></div><div id="relics"></div></div>
   <div id="pop"></div>
@@ -3940,7 +3941,7 @@ async function savePhoto(){
   const c=document.createElement('canvas'); c.width=canvas.width; c.height=canvas.height;
   const x=c.getContext('2d'); x.filter=PH_FILTERS[photo.filter].css; x.drawImage(canvas,0,0); x.filter='none';
   const fs=Math.round(c.height*0.028); x.font='bold '+fs+'px "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif';
-  x.textAlign='right'; x.fillStyle='rgba(0,0,0,.45)'; x.fillText('🤠 보안관 3D 대결',c.width-fs*0.8+2,c.height-fs*0.8+2); x.fillStyle='#ffd54f'; x.fillText('🤠 보안관 3D 대결',c.width-fs*0.8,c.height-fs*0.8);
+  x.textAlign='right'; x.fillStyle='rgba(0,0,0,.45)'; x.fillText('🤠 황야의 배지',c.width-fs*0.8+2,c.height-fs*0.8+2); x.fillStyle='#ffd54f'; x.fillText('🤠 황야의 배지',c.width-fs*0.8,c.height-fs*0.8);
   const url=c.toDataURL('image/png'), blob=await new Promise(r=>c.toBlob(r,'image/png'));
   const d=new Date(), name='sheriff-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0')+'.png';
   sfx('reward'); track('photo');
@@ -4060,7 +4061,7 @@ function openSettings(from){
     $('sAutoF').onclick=()=>{ SET.autoFire=((SET.autoFire==null?2:SET.autoFire)+2)%3; saveSet(); openSettings(); };
     $('sBigBtn').onclick=()=>{ SET.bigBtn=!SET.bigBtn; saveSet(); applyMobileLayout(); openSettings(); };
     if($('sVibLv')) $('sVibLv').onclick=()=>{ SET.vibLv=((SET.vibLv==null?1:SET.vibLv)+1)%3; saveSet(); vib(120); openSettings(); }; }
-  if($('sNotif')) $('sNotif').onclick=async()=>{ const on=!SET.notif; const ok=await setNotif(on); SET.notif=on&&ok; saveSet(); if(on&&!ok) toast('🔔 알림 권한이 꺼져 있어요','휴대폰 설정 → 앱 → 보안관 3D 대결 → 알림을 켜 주세요'); else toast(on?'🔔 매일 저녁 7시에 알려 드릴게요':'🔕 알림을 껐어요'); openSettings(); };
+  if($('sNotif')) $('sNotif').onclick=async()=>{ const on=!SET.notif; const ok=await setNotif(on); SET.notif=on&&ok; saveSet(); if(on&&!ok) toast('🔔 알림 권한이 꺼져 있어요','휴대폰 설정 → 앱 → 황야의 배지 → 알림을 켜 주세요'); else toast(on?'🔔 매일 저녁 7시에 알려 드릴게요':'🔕 알림을 껐어요'); openSettings(); };
   $('sKeys').onclick=openKeys;
   $('sBtns').onclick=openBtnEdit;
   $('sTut').onclick=()=>{ LS.set('sheriffTut',0); $('sTutT').textContent='다음에 새로 시작할 때 나와요'; };
@@ -4368,7 +4369,7 @@ async function saveNativePhoto(name,dataUrl){
   let uri=null, where='';
   try{ const r=await FS.writeFile({path:'Sheriff3D/'+name, data, directory:'DOCUMENTS', recursive:true}); uri=r.uri; where='📁 내 파일 › 문서(Documents) › Sheriff3D 폴더에 저장했어요.'; }
   catch(e){ try{ const r=await FS.writeFile({path:name, data, directory:'CACHE'}); uri=r.uri; }catch(e2){ return '저장하지 못했어요. 사진을 길게 눌러 저장해 보세요.'; } }
-  try{ await SHR.share({title:'보안관 3D 대결 사진', files:[uri], dialogTitle:'사진 저장·공유'}); }catch(e){}
+  try{ await SHR.share({title:'황야의 배지 사진', files:[uri], dialogTitle:'사진 저장·공유'}); }catch(e){}
   return where || '공유 화면에서 「갤러리에 저장」이나 원하는 앱을 고르세요.';
 }
 
@@ -5497,7 +5498,7 @@ function openOffice(){
 // =====================================================
 const GAME_URL='https://claude.ai/artifact/QeB3ny5r4Vk7DFkDPci76G';
 function isNativeApp(){ const C=window.Capacitor; return !!(C && C.isNativePlatform && C.isNativePlatform()); }
-function inviteText(code){ return '🤠 「보안관 3D 대결」 같이 하자!\n1) 게임 열기: '+GAME_URL+'\n2) 🎮 놀이 → 👥 함께하기\n3) 방 코드 「'+code+'」 입력 → 참가'; }
+function inviteText(code){ return '🤠 「황야의 배지」 같이 하자!\n1) 게임 열기: '+GAME_URL+'\n2) 🎮 놀이 → 👥 함께하기\n3) 방 코드 「'+code+'」 입력 → 참가'; }
 async function copyText(t){
   try{ await navigator.clipboard.writeText(t); toast('📋 초대 문구를 복사했어요','카톡·문자에 붙여넣기 하세요'); return; }catch(e){}
   showModal('<h3>📋 초대 문구</h3><textarea id="cpT" style="width:100%;height:120px;font-size:14px">'+t.replace(/</g,'&lt;')+'</textarea><p style="font-size:13px">길게 눌러(또는 Ctrl+C) 복사하세요.</p>');
@@ -5547,7 +5548,7 @@ async function bragCard(info){
   x.save(); x.beginPath(); x.roundRect ? x.roundRect(60,190,W-120,620,28) : x.rect(60,190,W-120,620); x.clip();
   x.drawImage(canvas,(sw-cw)/2,(sh-ch)/2,cw,ch,60,190,W-120,620); x.restore();
   x.strokeStyle='#ffd54f'; x.lineWidth=8; x.strokeRect(60,190,W-120,620);
-  x.textAlign='center'; x.fillStyle='#ffd54f'; x.font='900 76px '+F; x.fillText('🤠 보안관 3D 대결',W/2,110);
+  x.textAlign='center'; x.fillStyle='#ffd54f'; x.font='900 76px '+F; x.fillText('🤠 황야의 배지',W/2,110);
   x.fillStyle='#fff4dc'; x.font='bold 40px '+F; x.fillText(info.head,W/2,165);
   x.font='bold 54px '+F; x.fillStyle='#ffffff'; x.fillText(String(playerName).slice(0,12)+'  「'+titleOf(prog.lv)+'」',W/2,895);
   x.font='32px '+F; x.fillStyle='#ffcc80'; x.fillText('⭐ Lv '+prog.lv+' · '+info.sub,W/2,945);
@@ -5578,7 +5579,7 @@ function maybeAskReview(){
   if(!isNativeApp() || LS.get('sheriffReview',0) || stat('games')<5) return;
   LS.set('sheriffReview',1);
   setTimeout(()=>{
-    showModal('<h3>🤠 보안관 3D 대결, 재미있게 하고 있나요?</h3><p>잠깐 시간을 내어 별점을 남겨 주시면 큰 힘이 돼요!</p><button id="rvYes">⭐ 좋아요! 별점 남기기</button><button class="sec" id="rvNo">😕 아쉬운 점이 있어요</button>');
+    showModal('<h3>🤠 황야의 배지, 재미있게 하고 있나요?</h3><p>잠깐 시간을 내어 별점을 남겨 주시면 큰 힘이 돼요!</p><button id="rvYes">⭐ 좋아요! 별점 남기기</button><button class="sec" id="rvNo">😕 아쉬운 점이 있어요</button>');
     $('rvYes').onclick=()=>{ $('modalbox').style.display='none'; try{ window.open(STORE_URL,'_system'); }catch(e){ location.href=STORE_URL; } };
     $('rvNo').onclick=()=>{ $('modalbox').innerHTML='<div class="mb"><h3>🙏 알려 주셔서 고마워요</h3><p>Google Play 앱 페이지의 「개발자 연락처」로 의견을 보내 주시면 다음 업데이트에 반영할게요.</p><button id="mbClose">닫기</button></div>'; $('mbClose').onclick=()=>{ $('modalbox').style.display='none'; }; };
   },1600);
@@ -6358,7 +6359,8 @@ ACH.push(
 // =====================================================
 const GAME_VER='1.8';
 var LANG = SET.lang || ((navigator.language||'ko').toLowerCase().startsWith('ko') ? 'ko' : 'en');
-const I18N_RAW=`보안관 3D 대결|Sheriff 3D Showdown
+const I18N_RAW=`황야의 배지|Badge of the Frontier
+마을을 지켜라, 보안관!|Hold the Town, Sheriff!
 도전 횟수|tries
 ✅ 착용 중|✅ Wearing
 구매|Buy
@@ -7521,6 +7523,7 @@ const trObs=new MutationObserver(list=>{ if(trBusy || LANG!=='en') return; for(c
 function setLang(l){ LANG=l; SET.lang=l; saveSet(); if(l==='ko'){ if(mode==='play'||mode==='paused'||mode==='settings'){ toast('🌐 한국어로 바꿨어요','다음 판부터 모두 한국어로 보여요'); } else { location.reload(); return; } } applyLang(); if(mode==='menu') showMenu(); }
 function applyLang(){
   document.documentElement.lang=LANG;
+  document.title = LANG==='en' ? 'Badge of the Frontier - Hold the Town, Sheriff!' : '황야의 배지 - 마을을 지켜라, 보안관!';
   trObs.disconnect();
   if(LANG==='en'){ trObs.observe(document.body,{childList:true,subtree:true,characterData:true}); trNode(document.body); }
 }
@@ -7538,7 +7541,7 @@ async function setNotif(on){
     let perm=await N.checkPermissions(); if(perm.display!=='granted') perm=await N.requestPermissions();
     if(perm.display!=='granted') return false;
     const en=LANG==='en';
-    await N.schedule({notifications:[{id:7001, title:en?'🤠 Sheriff 3D Showdown':'🤠 보안관 3D 대결', body:en?"🎰 Today's rule changed and your login reward is waiting!":'🎰 오늘의 규칙이 바뀌었어요 · 📅 출석 보상도 기다려요!', schedule:{on:{hour:19, minute:0}, allowWhileIdle:true}}]});
+    await N.schedule({notifications:[{id:7001, title:en?'🤠 Badge of the Frontier':'🤠 황야의 배지', body:en?"🎰 Today's rule changed and your login reward is waiting!":'🎰 오늘의 규칙이 바뀌었어요 · 📅 출석 보상도 기다려요!', schedule:{on:{hour:19, minute:0}, allowWhileIdle:true}}]});
     return true;
   }catch(e){ logErr('notif: '+(e&&e.message),''); return false; }
 }
@@ -8514,7 +8517,7 @@ function openInvite(){
     +'<h3>📨 내 초대 코드</h3><div class="mpcode" data-notr="1">'+mine+'</div><p style="font-size:13px">친구가 게임에서 이 코드를 넣고 <b>첫 판을 끝내면</b> 친구는 💰 200을 받고, 나도 함께하기 방에서 그 친구를 만나면 💰 200을 받아요 (친구 한 명당 한 번, 최대 10명).</p><button id="ivCopy">📋 초대 문구 복사</button>'
     +'<h3>🎟 친구에게 받은 코드 넣기</h3>'+(used?'<p>✅ 이미 코드 <b data-notr="1">'+used+'</b>를 넣었어요'+(LS.get('sheriffInvPaid',0)?' · 보상 받음':' · 첫 판을 끝내면 💰 200!')+'</p>':'<input id="ivIn" maxlength="6" placeholder="6글자 코드" style="text-transform:uppercase;width:160px"> <button class="sec" id="ivUse">넣기</button>')
     +'<p style="font-size:13px;opacity:.85">🤝 초대해서 받은 보상: '+Object.keys(got).length+'명 · 💰 '+Object.keys(got).length*200+'</p></div><div style="text-align:center"><button id="ivClose">닫기</button></div>',false,true);
-  $('ivCopy').onclick=()=>copyText('🤠 「보안관 3D 대결」 같이 하자! 게임 시작 화면 → ☰ 더 보기 → 🎮 놀이 → 🎁 친구 초대 보상에 내 코드 「'+mine+'」를 넣고 한 판 하면 코인 200을 받아요!\n'+GAME_URL);
+  $('ivCopy').onclick=()=>copyText('🤠 「황야의 배지」 같이 하자! 게임 시작 화면 → ☰ 더 보기 → 🎮 놀이 → 🎁 친구 초대 보상에 내 코드 「'+mine+'」를 넣고 한 판 하면 코인 200을 받아요!\n'+GAME_URL);
   if($('ivUse')) $('ivUse').onclick=()=>{ const c=($('ivIn').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,''); if(c.length!==6){ toast('6글자 코드를 넣어 주세요'); return; } if(c===mine){ toast('내 코드는 넣을 수 없어요'); return; } LS.set('sheriffInvUsed',c); sfx('pickup'); toast('🎟 코드를 넣었어요!','첫 판을 끝내면 💰 200을 받아요'); openInvite(); };
   $('ivX').onclick=()=>openSub('play'); $('ivClose').onclick=()=>openSub('play');
 }
@@ -9019,7 +9022,7 @@ function autoMpMode(){ return 'auto'; }
 function resolveAutoMode(n){ return n>=4?'tsend':'coop'; }
 // ---------- 🔗 초대 한 번에 ----------
 function openShareAll(){
-  const code=myInviteCode(), room=mp&&mp.code, txt='🤠 「보안관 3D 대결」 같이 하자!\n🎮 게임: '+GAME_URL+(room?'\n👥 방 코드: '+room+' (🎮 함께하기 → 코드 입력)':'')+'\n🎁 초대 코드: '+code+' (☰ 더 보기 → 🏇 놀기 → 🎁 초대하기에 넣으면 코인 200!)';
+  const code=myInviteCode(), room=mp&&mp.code, txt='🤠 「황야의 배지」 같이 하자!\n🎮 게임: '+GAME_URL+(room?'\n👥 방 코드: '+room+' (🎮 함께하기 → 코드 입력)':'')+'\n🎁 초대 코드: '+code+' (☰ 더 보기 → 🏇 놀기 → 🎁 초대하기에 넣으면 코인 200!)';
   showModal('<h3>🔗 친구 초대 한 번에</h3><div id="saQR" style="background:#fff;padding:8px;border-radius:8px;display:inline-block">QR 불러오는 중…</div><p style="font-size:14px">🎁 내 초대 코드 <b style="font-size:20px;letter-spacing:2px" data-notr="1">'+code+'</b>'+(room?'<br>👥 방 코드 <b style="font-size:20px" data-notr="1">'+room+'</b>':'')+'</p><button id="saCopy">📋 초대 문구 모두 복사</button><button class="sec" id="saInv">🎁 초대 보상 화면</button><p style="font-size:12px;opacity:.75">링크가 안 열리면 게임 주인이 claude.ai 공유 메뉴에서 친구 이메일을 초대해야 해요.</p>');
   loadQR().then(QR=>{ const q=QR(0,'M'); q.addData(GAME_URL); q.make(); if($('saQR')) $('saQR').innerHTML=q.createSvgTag({cellSize:4,margin:2}); }).catch(()=>{ if($('saQR')) $('saQR').textContent=GAME_URL; });
   $('saCopy').onclick=()=>{ $('modalbox').style.display='none'; copyText(txt); track('shareAll'); };
@@ -9036,7 +9039,7 @@ async function friendCompareCard(){
   x.fillStyle='#fff4dc'; x.font='bold 40px '+F; x.fillText(String(playerName).slice(0,12)+' · '+rankText().split(' · ')[0],W/2,190);
   x.font='32px '+F; x.fillStyle='#ffcc80'; x.fillText('🏆 '+(me.s||0).toLocaleString()+'  ·  🏇 '+(me.r?fmtRace(me.r/10):'-')+'  ·  ⭐ '+me.b+'  ·  Lv '+me.lv,W/2,250);
   rows.slice(0,9).forEach((r,i)=>{ const y=340+i*105; x.fillStyle='rgba(255,213,79,.12)'; x.fillRect(80,y-60,W-160,90); x.textAlign='left'; x.fillStyle='#fff'; x.font='bold 40px '+F; x.fillText('🤠 '+r.nm.slice(0,12),110,y); x.textAlign='right'; x.fillStyle=r.win.length?'#69f0ae':'#ff8a80'; x.font='32px '+F; x.fillText(r.win.length?'내가 앞섬: '+r.win.join(' '):'다음엔 이기자! 💪',W-110,y); });
-  x.textAlign='center'; x.font='28px '+F; x.fillStyle='rgba(255,244,220,.6)'; x.fillText(weekKey()+' · 🤠 보안관 3D 대결',W/2,H-40);
+  x.textAlign='center'; x.font='28px '+F; x.fillStyle='rgba(255,244,220,.6)'; x.fillText(weekKey()+' · 🤠 황야의 배지',W/2,H-40);
   const url=c.toDataURL('image/png'), blob=await new Promise(r=>c.toBlob(r,'image/png')); sfx('reward'); saveImageOut(url,blob,stampName('sheriff-record-friends'),'친구에게 보내 보세요!');
 }
 // ---------- 🧪 처음 10분: 다음 할 일 안내 ----------
@@ -9244,7 +9247,7 @@ function openBugReport(){
     +'<button id="bgSend">📨 보내기</button><button class="sec" id="bgCopy">📋 신고 글 복사</button><button class="sec" id="bgClose">닫기</button><div id="bgMsg" class="note"></div>');
   $('bgInfo').textContent=info;
   const text=()=>($('bgText').value||'').trim().replace(/[\r\n]+/g,' ').slice(0,240);
-  const report=()=>'🐞 「보안관 3D 대결」 버그 신고\n'+(text()||'(내용 없음)')+'\n— '+info;
+  const report=()=>'🐞 「황야의 배지」 버그 신고\n'+(text()||'(내용 없음)')+'\n— '+info;
   $('bgSend').onclick=()=>{ const t=text(); if(t.length<3){ $('bgMsg').textContent='조금만 더 자세히 적어 주세요'; return; }
     const last=LS.get('sheriffBugAt',0); if(Date.now()-last<60000){ $('bgMsg').textContent='1분 뒤에 다시 보낼 수 있어요'; return; } LS.set('sheriffBugAt',Date.now());
     const mine=LS.get('sheriffBugs',[]); mine.push({t, info, d:new Date().toISOString()}); LS.set('sheriffBugs',mine.slice(-10));
@@ -10651,7 +10654,7 @@ function showMenu(){
   if(checkNews()) return;
   rankCheck();
   const lk=lastRunKind(), LK=RUN_KINDS[lk], rk=recommendKind(), [jd,jt]=journalCount(), mailN=mailUnread()+pendingCount();
-  showOverlay('<h1>🤠 보안관 3D 대결</h1>'+lvBoxHTML()+'<div class="rankline"><button class="sec mini" id="rankBtn">'+rankText().split(' (')[0]+'</button></div>'
+  showOverlay('<h1>🤠 황야의 배지<small class="subt">마을을 지켜라, 보안관!</small></h1>'+lvBoxHTML()+'<div class="rankline"><button class="sec mini" id="rankBtn">'+rankText().split(' (')[0]+'</button></div>'
     +(loadSave() ? '<div id="contBox" style="margin:4px 0 8px"></div>' : '')
     +'<div class="qrow"><button class="sec" id="jnBtn">'+rdot(jd<jt&&stat('games')>0)+'📅 일지 <small>'+jd+'/'+jt+'</small></button><button class="sec" id="mlBtn">'+rdot(mailN>0)+'📬 우편함'+(mailN?' <small>'+mailN+'</small>':'')+'</button><button class="sec" id="shBtn">🛒 상점 <small>💰 '+coins.toLocaleString()+'</small></button></div>'
     +nextStepHTML()
