@@ -1,0 +1,142 @@
+rules_version = '2';
+// 보안관 3D 대결 - 온라인 명예의 전당 보안 규칙
+// 누구나 순위를 볼 수 있고, 새 기록 추가만 가능합니다 (수정·삭제 불가).
+// 난이도별: scores(보통), scores_easy, scores_hard, scores_hell
+// 이벤트: scores_event · 보스 러시: scores_rush · 2인 러시: scores_rush2 · 결투: scores_duel · 경주: scores_race · 카드 모험: scores_cards · 보스 탑: scores_tower · 밤 습격: scores_night · 친구 레이드: raid · 친구 유령: race_ghosts · 오류 기록: errors
+// tt(칭호, 12자 이내)는 있어도 되고 없어도 됩니다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function okName(max) {
+      return request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= max;
+    }
+    function okDate() { return request.resource.data.date is string && request.resource.data.date.size() <= 40; }
+    function okTitle() { return !('tt' in request.resource.data) || (request.resource.data.tt is string && request.resource.data.tt.size() <= 12); }
+    function okWeek() { return request.resource.data.wk is string && request.resource.data.wk.size() <= 10; }
+
+    match /{coll}/{id} {
+      allow read: if coll in ['scores', 'scores_easy', 'scores_hard', 'scores_hell'];
+      allow create: if coll in ['scores', 'scores_easy', 'scores_hard', 'scores_hell']
+        && request.resource.data.keys().hasOnly(['name', 'score', 'wave', 'bosses', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 'score', 'wave', 'bosses', 'date'])
+        && okName(12) && okDate() && okTitle()
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000000
+        && request.resource.data.wave is int && request.resource.data.wave >= 0 && request.resource.data.wave <= 500
+        && request.resource.data.bosses is int && request.resource.data.bosses >= 0 && request.resource.data.bosses <= 100;
+      allow update, delete: if false;
+    }
+    match /scores_event/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'score', 'wave', 'wk', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 'score', 'wave', 'wk', 'date'])
+        && okName(12) && okDate() && okTitle() && okWeek()
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000000
+        && request.resource.data.wave is int && request.resource.data.wave >= 0 && request.resource.data.wave <= 500;
+      allow update, delete: if false;
+    }
+    // 주간 보스 러시: 클리어 시간(t, 0.1초 단위)과 주(wk, 예: 2026-W45)
+    match /scores_rush/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 't', 'wk', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 't', 'wk', 'date'])
+        && okName(12) && okDate() && okTitle() && okWeek()
+        && request.resource.data.t is int && request.resource.data.t > 300 && request.resource.data.t < 360000;
+      allow update, delete: if false;
+    }
+    // 협동 보스 러시 (2~4인): 팀 이름(최대 40자) · 팀 기록
+    match /scores_rush2/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 't', 'wk', 'date'])
+        && request.resource.data.keys().hasAll(['name', 't', 'wk', 'date'])
+        && okName(40) && okDate() && okWeek()
+        && request.resource.data.t is int && request.resource.data.t > 300 && request.resource.data.t < 360000;
+      allow update, delete: if false;
+    }
+    // 결투: 이긴 라운드 수(w, 0~5)와 평균 반응 속도(ms)
+    match /scores_duel/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'ms', 'w', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 'ms', 'w', 'date'])
+        && okName(12) && okDate() && okTitle()
+        && request.resource.data.ms is int && request.resource.data.ms >= 100 && request.resource.data.ms < 1500
+        && request.resource.data.w is int && request.resource.data.w >= 0 && request.resource.data.w <= 5;
+      allow update, delete: if false;
+    }
+    // 탈것 경주: 코스(c 0~2)별 기록 시간(t, 0.1초 단위)과 탈것(mt)
+    match /scores_race/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 't', 'c', 'mt', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 't', 'c', 'mt', 'date'])
+        && okName(12) && okDate() && okTitle()
+        && request.resource.data.t is int && request.resource.data.t >= 200 && request.resource.data.t < 36000
+        && request.resource.data.c is int && request.resource.data.c >= 0 && request.resource.data.c <= 4
+        && request.resource.data.mt is string && request.resource.data.mt.size() <= 12;
+      allow update, delete: if false;
+    }
+    // 카드 모험: 점수·웨이브
+    match /scores_cards/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'score', 'wave', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 'score', 'wave', 'date'])
+        && okName(12) && okDate() && okTitle()
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000000
+        && request.resource.data.wave is int && request.resource.data.wave >= 0 && request.resource.data.wave <= 500;
+      allow update, delete: if false;
+    }
+    // 보스 탑: 도달 층(wave)·점수
+    match /scores_tower/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'score', 'wave', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 'score', 'wave', 'date'])
+        && okName(12) && okDate() && okTitle()
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000000
+        && request.resource.data.wave is int && request.resource.data.wave >= 0 && request.resource.data.wave <= 300;
+      allow update, delete: if false;
+    }
+    match /scores_night/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'score', 'wave', 'date', 'tt'])
+        && request.resource.data.keys().hasAll(['name', 'score', 'wave', 'date'])
+        && okName(12) && okDate() && okTitle()
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000000
+        && request.resource.data.wave is int && request.resource.data.wave >= 0 && request.resource.data.wave <= 10;
+      allow update, delete: if false;
+    }
+    // 🐉 이번 주 친구 레이드: 한 판에 준 피해(dmg)와 주(wk)
+    match /raid/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'dmg', 'wk', 'date'])
+        && request.resource.data.keys().hasAll(['name', 'dmg', 'wk', 'date'])
+        && okName(12) && okDate() && okWeek()
+        && request.resource.data.dmg is int && request.resource.data.dmg >= 0 && request.resource.data.dmg <= 30000;
+      allow update, delete: if false;
+    }
+    // 👻 친구 고스트 경주: 코스(c), 기록(t, 0.1초), 탈것(mt), 움직임(d, 글자로 줄인 좌표)
+    match /race_ghosts/{id} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'c', 't', 'mt', 'd', 'date'])
+        && request.resource.data.keys().hasAll(['name', 'c', 't', 'mt', 'd', 'date'])
+        && okName(12) && okDate()
+        && request.resource.data.c is int && request.resource.data.c >= 0 && request.resource.data.c <= 20
+        && request.resource.data.t is int && request.resource.data.t >= 200 && request.resource.data.t <= 9000
+        && request.resource.data.mt is string && request.resource.data.mt.size() <= 12
+        && request.resource.data.d is string && request.resource.data.d.size() <= 12000;
+      allow update, delete: if false;
+    }
+    // 오류 기록: 아무도 읽을 수 없고(콘솔에서 개발자만 확인) 짧은 글만 추가 가능
+    match /errors/{id} {
+      allow read: if false;
+      allow create: if request.resource.data.keys().hasOnly(['msg', 'at', 'ver', 'ua', 'md', 'date'])
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 200
+        && request.resource.data.at is string && request.resource.data.at.size() <= 120
+        && request.resource.data.ver is string && request.resource.data.ver.size() <= 10
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 80
+        && request.resource.data.md is string && request.resource.data.md.size() <= 40
+        && okDate();
+      allow update, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

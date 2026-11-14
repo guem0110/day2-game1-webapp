@@ -15,3 +15,15 @@
 1. 기본 게임: 난이도 3단계, 1분 타이머, 힌트 3회
 2. 그림 품질 향상: 음영·그림자·외곽선·그라데이션 배경(SVG 벡터)
 3. 15단계 모드 + 단계별 테마 변경, 가려진 차이 자동 제외
+
+---
+
+# 🤠 보안관 3D 대결 (`sheriff-3d/`)
+
+3인칭 3D 서부 슈팅 게임입니다. `sheriff-3d/index.html`을 브라우저로 열면 바로 플레이할 수 있습니다 (Three.js를 CDN에서 불러오므로 인터넷 연결 필요).
+
+- 📖 게임 전체 정리: [sheriff-3d/GAME_GUIDE.md](sheriff-3d/GAME_GUIDE.md) · English: [sheriff-3d/GAME_GUIDE_en.md](sheriff-3d/GAME_GUIDE_en.md)
+- 📝 단계별 변경 이력: [sheriff-3d/README.md](sheriff-3d/README.md)
+- 📱 안드로이드 앱 프로젝트: [sheriff-3d/app/](sheriff-3d/app/README.md)
+- 지금 버전: 1.8
+- 참고: 앱 자동 빌드 설정(`.github/workflows/android.yml`)은 저장소 맨 위에 있어야 동작해서 이 폴더에는 넣지 않았습니다.
