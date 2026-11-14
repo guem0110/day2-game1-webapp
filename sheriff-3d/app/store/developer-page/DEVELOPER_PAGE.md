@@ -16,7 +16,7 @@ Play Console → **설정 → 개발자 페이지**에 넣을 자료입니다.
 | 항목 | 파일 | 크기 |
 |---|---|---|
 | 개발자 아이콘 | `developer-icon-512.png` | 512 × 512 PNG |
-| 헤더 이미지 | `developer-header-4096x2304.png` | 4096 × 2304 PNG |
+| 헤더 이미지 | `developer-header-4096x2304.jpg` | 4096 × 2304 JPG · 약 0.9MB (1MB 이하) |
 
 ## 3. 광고 문구 (개발자 소개)
 Play Console 입력칸의 글자 수 제한에 맞춰 골라 쓰세요 (짧은 것은 140자 이내).
