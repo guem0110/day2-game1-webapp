@@ -9,14 +9,19 @@
 | ✅ | 할 일 | 어디서 |
 |---|---|---|
 | ☐ | Google Play 개발자 계정 만들기 ($25, 신원 확인) | play.google.com/console |
-| ☐ | 업로드 키(.jks) 만들고 **따로 백업** (비밀번호도) | `app/README.md` 2단계 |
-| ☐ | 출시용 AAB 만들기 (버전 1.8 · versionCode 9) | Android Studio 또는 GitHub Actions |
+| ✅ | 업로드 키(.jks) 만들고 **따로 백업** (비밀번호도) | 만들어 둠: `sheriff-upload.jks` + `KEY_INFO.txt` (저장소에는 없음 · 직접 보관) |
+| ✅ | 출시용 AAB 만들기 (버전 1.8 · versionCode 9) | 만들어 둠: `badge-of-the-frontier-1.8.aab` (테스트용 APK도 있음) |
 | ☐ | 개인정보처리방침 **연락처 이메일 채우기** | `privacy.html` 맨 아래 |
 | ☐ | 개인정보처리방침을 인터넷 주소로 공개 (GitHub Pages 등) | |
 | ☐ | (온라인 순위표를 쓴다면) Firebase 프로젝트 + `firestore.rules` 게시 | `app/README.md` 1단계 |
 | ☐ | 스토어 등록정보: 앱 이름·짧은/자세한 설명 | `store/listing.md` |
 | ☐ | 아이콘 512×512, 그래픽 이미지 1024×500, 스크린샷 8장 | `store/` 폴더 |
 | ☐ | 앱 콘텐츠 설문 (광고 없음·콘텐츠 등급·데이터 보안·타겟층) | `store/listing.md` 아래 표 |
+
+### 업로드 키 지문 (Play Console에서 확인할 때 비교용 · 비밀 아님)
+- SHA-1: `94:AC:02:0C:38:1B:AC:76:73:47:39:86:D1:E1:69:9C:EC:27:5F:8D`
+- SHA-256: `B5:47:40:B9:F9:81:FD:FA:D2:F0:AB:49:D4:84:14:69:86:D0:74:D6:2E:29:61:21:0E:0A:2E:14:11:7B:D9:EB`
+- 처음 올릴 때 「Play 앱 서명」을 켜 두면(기본값) Google이 실제 배포 키를 보관하고, 이 키는 **올리기용**으로만 써요. 잃어버려도 Play Console에서 재설정을 요청할 수 있지만 시간이 걸리니 꼭 백업하세요.
 
 ---
 
