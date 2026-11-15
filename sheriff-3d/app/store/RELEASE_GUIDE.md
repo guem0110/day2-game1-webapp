@@ -10,7 +10,7 @@
 |---|---|---|
 | ☐ | Google Play 개발자 계정 만들기 ($25, 신원 확인) | play.google.com/console |
 | ✅ | 업로드 키(.jks) 만들고 **따로 백업** (비밀번호도) | 만들어 둠: `sheriff-upload.jks` + `KEY_INFO.txt` (저장소에는 없음 · 직접 보관) |
-| ✅ | 출시용 AAB 만들기 (버전 1.8 · versionCode 9) | 만들어 둠: `badge-of-the-frontier-1.8.aab` (테스트용 APK도 있음) |
+| ✅ | 출시용 AAB 만들기 (버전 1.8.1 · versionCode 10) | 만들어 둠: `badge-of-the-frontier-1.8.1.aab` (테스트용 APK도 있음) |
 | ☐ | 개인정보처리방침 **연락처 이메일 채우기** | `privacy.html` 맨 아래 |
 | ☐ | 개인정보처리방침을 인터넷 주소로 공개 (GitHub Pages 등) | |
 | ☐ | (온라인 순위표를 쓴다면) Firebase 프로젝트 + `firestore.rules` 게시 | `app/README.md` 1단계 |
